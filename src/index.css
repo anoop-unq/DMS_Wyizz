@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Global styles to prevent white background */
+html, body {
+  background-color: #00201E !important;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  background-color: #00201E !important;
+  min-height: 100vh;
+}

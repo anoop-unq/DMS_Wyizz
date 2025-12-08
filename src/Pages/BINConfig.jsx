@@ -1,0 +1,2428 @@
+
+// // // import React, { useEffect, useRef, useState } from "react";
+// // // import { Loader2 } from "lucide-react";
+// // // import { metadataApi, campaignDiscountApi, campaignApi } from "../utils/metadataApi"; 
+
+// // // const BINConfig = ({ 
+// // //   data, 
+// // //   onUpdate, 
+// // //   onNext, 
+// // //   onPrevious, 
+// // //   campaignId, 
+// // //   isEditMode,
+// // //   onRefresh
+// // // }) => {
+// // //   // --- State: Data from API ---
+// // //   const [availableSegments, setAvailableSegments] = useState([]);
+// // //   const [loadingSegments, setLoadingSegments] = useState(false);
+
+// // //   // --- State: UI Controls ---
+// // //   const [segmentsOpen, setSegmentsOpen] = useState(false);
+  
+// // //   const [selectedSegments, setSelectedSegments] = useState([]); 
+// // //   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]); 
+// // //   const [segmentRanges, setSegmentRanges] = useState({});
+// // //   const [tokens, setTokens] = useState([]); 
+  
+// // //   const [tokenInput, setTokenInput] = useState("");
+
+// // //   const [isLoadingData, setIsLoadingData] = useState(false);     
+// // //   const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false); 
+// // //   const [isNextSubmitting, setIsNextSubmitting] = useState(false);     
+  
+// // //   const isAnySubmitting = isUpdateSubmitting || isNextSubmitting; 
+  
+// // //   const segRef = useRef(null);
+    
+// // //     // --- Helper to format API bin object ---
+// // //     const formatBinRange = (binObj) => {
+// // //         if (!binObj) return "";
+// // //         return `${binObj.start_bin} - ${binObj.end_bin}`;
+// // //     };
+
+// // //     // --- Helper to map API data (READING) to local state ---
+// // //     const mapApiDataToState = (discountData) => {
+// // //         // Handle both key possibilities
+// // //         const segmentsApi = discountData.discount_segments || discountData.segments || [];
+        
+// // //         const newSelectedSegments = [];
+// // //         const newSelectedSegmentIds = [];
+// // //         const newSegmentRanges = {};
+// // //         const newTokens = [];
+        
+// // //         segmentsApi.forEach(segment => {
+// // //             const segName = segment.segment_name || segment.name;
+// // //             // Only add if we haven't already (prevent dupes if API sends bad data)
+// // //             if (!newSelectedSegments.includes(segName)) {
+// // //                 newSelectedSegments.push(segName);
+// // //                 newSelectedSegmentIds.push(segment.id || segment.segment_id);
+// // //             }
+            
+// // //             const masterSegment = availableSegments.find(s => s.id === (segment.id || segment.segment_id) || (s.segment_name || s.name) === segName);
+            
+// // //             let masterRanges = [];
+// // //             if (masterSegment && masterSegment.bin_ranges?.length > 0) {
+// // //                 masterRanges = masterSegment.bin_ranges.map(formatBinRange);
+// // //             } else {
+// // //                 masterRanges = ["N/A - N/A"];
+// // //             }
+
+// // //             let selectedRanges = [];
+            
+// // //             // Handle different key names from GET response
+// // //             const apiBins = segment.discount_bins || segment.bin_ranges;
+            
+// // //             if (apiBins && apiBins.length > 0) {
+// // //                 selectedRanges = apiBins.map(formatBinRange);
+// // //             } 
+// // //             else if (segment.all_bins) { 
+// // //                 selectedRanges = masterRanges;
+// // //             } else {
+// // //                 selectedRanges = masterRanges; 
+// // //             }
+            
+// // //             newSegmentRanges[segName] = selectedRanges;
+
+// // //             // Handle Tokens
+// // //             const apiTokens = segment.discount_apple_tokens || segment.apple_tokens;
+// // //             if (apiTokens && apiTokens.length > 0) {
+// // //                 apiTokens.forEach(token => {
+// // //                     if (!newTokens.some(t => t.value === token.token_value)) {
+// // //                         newTokens.push({
+// // //                             value: token.token_value,
+// // //                             checked: true 
+// // //                         });
+// // //                     }
+// // //                 });
+// // //             }
+// // //         });
+        
+// // //         setSelectedSegments(newSelectedSegments);
+// // //         setSelectedSegmentIds(newSelectedSegmentIds);
+// // //         setSegmentRanges(newSegmentRanges);
+// // //         setTokens(newTokens);
+        
+// // //         // Sync to parent immediately so Summary page has data to display
+// // //         updateParent({ 
+// // //             selectedSegments: newSelectedSegments, 
+// // //             selectedSegmentIds: newSelectedSegmentIds, 
+// // //             segmentRanges: newSegmentRanges, 
+// // //             tokens: newTokens,
+// // //             finalSegmentsData: generatePayload(newSelectedSegments, newSegmentRanges, newTokens)
+// // //         });
+// // //     };
+
+// // //   // --- 1. Fetch Segments ---
+// // //   useEffect(() => {
+// // //     const fetchSegments = async () => {
+// // //       setLoadingSegments(true);
+// // //       try {
+// // //         const res = await metadataApi.getSegments();
+// // //         const rows = res.data?.rows || res.data || [];
+// // //         setAvailableSegments(rows);
+// // //       } catch (err) {
+// // //         console.error("Failed to load segments", err);
+// // //       } finally {
+// // //         setLoadingSegments(false);
+// // //       }
+// // //     };
+// // //     fetchSegments();
+// // //   }, []);
+
+// // //     // --- 2. Load Existing Data using campaignId ---
+// // //     useEffect(() => {
+// // //         if (campaignId && availableSegments.length > 0) { 
+// // //             const fetchStepData = async () => {
+// // //                 setIsLoadingData(true); 
+// // //                 try {
+// // //                     const res = await campaignDiscountApi.getById(campaignId);
+// // //                     const d = res.data?.discount || {};
+                    
+// // //                     const hasSegments = (d.discount_segments && d.discount_segments.length > 0) || 
+// // //                                       (d.segments && d.segments.length > 0);
+
+// // //                     if (d && hasSegments) {
+// // //                         mapApiDataToState(d);
+// // //                     }
+// // //                 } catch (err) {
+// // //                     console.error("Failed to load Step 2 details", err);
+// // //                 } finally {
+// // //                     setIsLoadingData(false); 
+// // //                 }
+// // //             };
+// // //             fetchStepData();
+// // //         }
+// // //     }, [campaignId, availableSegments.length]);
+
+// // //   // --- 3. Initialize from Props (Backup) ---
+// // //   useEffect(() => {
+// // //     if (data && !isLoadingData && selectedSegments.length === 0) { 
+// // //       const cleanData = {
+// // //         selectedSegments: Array.isArray(data.selectedSegments) ? data.selectedSegments : [],
+// // //         selectedSegmentIds: Array.isArray(data.selectedSegmentIds) ? data.selectedSegmentIds : [],
+// // //         segmentRanges: data.segmentRanges && typeof data.segmentRanges === 'object' ? data.segmentRanges : {},
+// // //         tokens: Array.isArray(data.tokens) ? data.tokens : [],
+// // //       };
+      
+// // //       if (cleanData.selectedSegments.length > 0) {
+// // //           setSelectedSegments(cleanData.selectedSegments);
+// // //           setSelectedSegmentIds(cleanData.selectedSegmentIds);
+// // //           setSegmentRanges(cleanData.segmentRanges);
+          
+// // //           if (cleanData.tokens && Array.isArray(cleanData.tokens)) {
+// // //             setTokens(cleanData.tokens.map((t) => typeof t === "string" ? { value: t, checked: true } : { ...t, checked: !!t.checked }));
+// // //           }
+// // //       }
+// // //     }
+// // //   }, [data, isLoadingData]);
+
+// // //   // Close dropdown logic
+// // //   useEffect(() => {
+// // //     const handleClick = (e) => {
+// // //       if (segRef.current && !segRef.current.contains(e.target)) setSegmentsOpen(false);
+// // //     };
+// // //     document.addEventListener("mousedown", handleClick);
+// // //     return () => document.removeEventListener("mousedown", handleClick);
+// // //   }, []);
+
+// // //   // ✅ GENERATE PAYLOAD (Matching requested structure)
+// // //   // This function needs to be pure (not rely on closure variables if called from outside)
+// // //   const generatePayload = (
+// // //       currSegments = selectedSegments, 
+// // //       currRanges = segmentRanges, 
+// // //       currTokens = tokens
+// // //   ) => {
+// // //       if (currSegments.length === 0) return null;
+
+// // //       return currSegments.map(segName => {
+// // //           const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+// // //           const selectedRanges = currRanges[segName] || [];
+          
+// // //           const hasSelectedSpecificBins = selectedRanges.some(range => range !== "N/A - N/A");
+          
+// // //           const binRanges = hasSelectedSpecificBins ? selectedRanges
+// // //             .filter(range => range !== "N/A - N/A")
+// // //             .map(range => {
+// // //               const [startBin, endBin] = range.split(" - ");
+// // //               return {
+// // //                 start_bin: startBin.trim(),
+// // //                 end_bin: endBin.trim(),
+// // //               };
+// // //             }) : [];
+
+// // //           const hasSelectedTokens = currTokens.some(t => t.checked);
+          
+// // //           const appleTokens = hasSelectedTokens ? currTokens
+// // //             .filter(t => t.checked)
+// // //             .map(t => ({
+// // //               token_value: t.value
+// // //             })) : [];
+
+// // //           return {
+// // //             segment_id: originalSeg?.id,
+// // //             all_bins: !hasSelectedSpecificBins, 
+// // //             all_tokens: !hasSelectedTokens,     
+// // //             bin_ranges: binRanges,    
+// // //             apple_tokens: appleTokens 
+// // //           };
+// // //       });
+// // //   };
+
+// // //   const updateParent = (updates) => {
+// // //     // Merge updates with current state to ensure nothing is lost
+// // //     const mergedState = {
+// // //         selectedSegments: updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+// // //         selectedSegmentIds: updates.selectedSegmentIds !== undefined ? updates.selectedSegmentIds : selectedSegmentIds,
+// // //         segmentRanges: updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+// // //         tokens: updates.tokens !== undefined ? updates.tokens : tokens,
+// // //         // If finalSegmentsData is explicitly passed, use it, otherwise generate it
+// // //         finalSegmentsData: updates.finalSegmentsData !== undefined 
+// // //             ? updates.finalSegmentsData 
+// // //             : generatePayload(
+// // //                 updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+// // //                 updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+// // //                 updates.tokens !== undefined ? updates.tokens : tokens
+// // //               )
+// // //     };
+    
+// // //     onUpdate(mergedState);
+// // //   };
+
+// // //   // --- Handlers ---
+// // //   const handleSubmit = async (action) => { 
+// // //     if (selectedSegments.length === 0) {
+// // //       alert("Please select at least one segment.");
+// // //       return;
+// // //     }
+    
+// // //     if (action === 'update') setIsUpdateSubmitting(true);
+// // //     else setIsNextSubmitting(true);
+   
+// // //     try {
+// // //       // 1. Generate Payload using CURRENT state
+// // //       const formattedSegments = generatePayload(selectedSegments, segmentRanges, tokens);
+      
+// // //       // Update parent state first so Summary has latest data
+// // //       updateParent({ finalSegmentsData: formattedSegments });
+
+// // //       if (!campaignId) {
+// // //           throw new Error("Missing Campaign ID. Cannot update.");
+// // //       }
+
+// // //       // ✅ CONSTRUCT PAYLOAD
+// // //       // Structure: { discount: { segments: [...] } }
+// // //       const apiBody = {
+// // //           discount: {
+// // //               segments: formattedSegments 
+// // //           }
+// // //       };
+
+// // //       console.log(`📤 PUT Payload to ID ${campaignId}:`, JSON.stringify(apiBody, null, 2));
+      
+// // //       // ✅ CALL PUT API
+// // //       await campaignDiscountApi.update(campaignId, apiBody);
+      
+// // //       if (action === 'next') {
+// // //         onNext(); 
+// // //       } else if (action === 'update') {
+// // //           if (onRefresh) await onRefresh();
+// // //           console.log("✅ Step 2 Updated.");
+// // //       }
+
+// // //     } catch (error) {
+// // //       console.error("❌ Error saving BIN configuration:", error);
+// // //       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+// // //       alert(`Failed to save configuration. Error: ${errorMsg}`);
+// // //     } finally {
+// // //       setIsUpdateSubmitting(false);
+// // //       setIsNextSubmitting(false);
+// // //     }
+// // //   };
+
+// // //   // ... (Toggle Functions - KEEP SAME) ...
+// // //   const toggleSegment = (segment) => {
+// // //     const name = segment.segment_name || segment.name;
+// // //     const segmentId = segment.id;
+// // //     const isSelected = selectedSegments.includes(name);
+
+// // //     let newSelectedNames;
+// // //     let newSelectedIds;
+// // //     let newRanges = { ...segmentRanges };
+
+// // //     if (isSelected) {
+// // //       newSelectedNames = selectedSegments.filter((s) => s !== name);
+// // //       newSelectedIds = selectedSegmentIds.filter((sid) => sid !== segmentId);
+// // //       delete newRanges[name];
+// // //     } else {
+// // //       newSelectedNames = [...selectedSegments, name];
+// // //       newSelectedIds = [...selectedSegmentIds, segmentId];
+
+// // //       let currentBins = [];
+// // //       if (segment.bin_ranges && segment.bin_ranges.length > 0) {
+// // //         currentBins = segment.bin_ranges.map(formatBinRange);
+// // //       } else {
+// // //         currentBins = ["N/A - N/A"]; 
+// // //       }
+// // //       newRanges[name] = currentBins;
+// // //     }
+
+// // //     setSelectedSegments(newSelectedNames);
+// // //     setSelectedSegmentIds(newSelectedIds);
+// // //     setSegmentRanges(newRanges);
+    
+// // //     // Pass explicit updates to updateParent
+// // //     updateParent({ 
+// // //       selectedSegments: newSelectedNames, 
+// // //       selectedSegmentIds: newSelectedIds, 
+// // //       segmentRanges: newRanges 
+// // //     });
+// // //   };
+
+// // //   const toggleRangeForSegment = (segmentName, rangeString) => {
+// // //     const currentRanges = segmentRanges[segmentName] || [];
+// // //     let updated;
+// // //     if (currentRanges.includes(rangeString)) {
+// // //       updated = currentRanges.filter((r) => r !== rangeString);
+// // //     } else {
+// // //       updated = [...currentRanges, rangeString];
+// // //     }
+// // //     const newSegmentRanges = { ...segmentRanges, [segmentName]: updated };
+// // //     setSegmentRanges(newSegmentRanges);
+    
+// // //     updateParent({ segmentRanges: newSegmentRanges });
+// // //   };
+
+// // //   const removeSegmentCard = (segmentName) => {
+// // //     const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+// // //     if (segObj) toggleSegment(segObj);
+// // //   };
+
+// // //   const segmentsDisplay = selectedSegments.length ? selectedSegments.join(", ") : "Select segment";
+
+// // //   const parseInputToValues = (input) => {
+// // //     return input
+// // //       .split(/\r?\n|,|;/)
+// // //       .map((s) => s.trim())
+// // //       .filter((s) => s.length > 0);
+// // //   };
+
+// // //   const handleAddTokens = () => {
+// // //     const values = parseInputToValues(tokenInput);
+// // //     if (values.length === 0) {
+// // //       setTokenInput("");
+// // //       return;
+// // //     }
+// // //     const existingValues = new Set(tokens.map((t) => t.value));
+// // //     const newTokens = values
+// // //       .filter((v) => !existingValues.has(v))
+// // //       .map((v) => ({ value: v, checked: true }));
+
+// // //     if (newTokens.length > 0) {
+// // //       const updated = [...tokens, ...newTokens];
+// // //       setTokens(updated);
+// // //       updateParent({ tokens: updated });
+// // //     }
+// // //     setTokenInput("");
+// // //   };
+
+// // //   const toggleTokenChecked = (value) => {
+// // //     const updatedTokens = tokens.map((t) => 
+// // //       t.value === value ? { ...t, checked: !t.checked } : t
+// // //     );
+// // //     setTokens(updatedTokens);
+// // //     updateParent({ tokens: updatedTokens });
+// // //   };
+
+// // //   const handleTokenKeyDown = (e) => {
+// // //     if (e.key === "Enter" && !e.shiftKey) {
+// // //       e.preventDefault();
+// // //       handleAddTokens();
+// // //     }
+// // //   };
+
+// // //   if (isLoadingData) {
+// // //     return (
+// // //       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+// // //         <div className="flex items-center justify-center h-64">
+// // //           <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+// // //           <span className="ml-2 text-gray-600">Loading BIN configuration...</span>
+// // //         </div>
+// // //       </div>
+// // //     );
+// // //   }
+
+// // //   return (
+// // //     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+// // //       {/* Header */}
+// // //       <div className="flex items-start justify-between mb-4">
+// // //         <div className="flex gap-2 items-center">
+// // //           <span className="w-5 h-5 text-center bg-[#EFEFFD] text-[#7747EE] rounded-full text-xs flex items-center justify-center mb-2">2</span>
+// // //           <h3 className="card-inside-head">BIN Configuration</h3>
+// // //         </div>
+// // //         <div className="text-xs text-gray-500">Step 2 of 6</div>
+// // //         </div>
+
+// // //       {/* Controls Row */}
+// // //       <div className="bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4 grid grid-cols-1 lg:grid-cols-1 gap-4 items-end">
+// // //         <div ref={segRef} className="relative justify-self-start w-full">
+// // //           <label className="block text-sm text-gray-700 mb-2">Select Segment Name <span className="text-red-500">*</span></label>
+// // //           <div className="flex items-center w-full">
+// // //             <button
+// // //               type="button"
+// // //               onClick={() => setSegmentsOpen(!segmentsOpen)}
+// // //               className="flex-1 flex items-center justify-between border border-[#B0B2F7] rounded p-2 bg-white text-sm h-10"
+// // //               disabled={isAnySubmitting}
+// // //             >
+// // //               <span className="text-sm text-gray-700 truncate">{segmentsDisplay}</span>
+// // //               <svg className="w-4 h-4 text-gray-400 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+// // //             </button>
+// // //             <button
+// // //               type="button"
+// // //               onClick={() => setSegmentsOpen(true)}
+// // //               className="ml-4 px-8 bg-[#7747EE] text-white rounded-full text-sm flex-shrink-0 h-9"
+// // //               disabled={isAnySubmitting}
+// // //             >
+// // //               Add
+// // //             </button>
+// // //           </div>
+
+// // //           {segmentsOpen && (
+// // //             <div className="absolute z-30 mt-2 w-full bg-white border border-[#E2E8F0] rounded shadow-sm p-3 max-h-48 overflow-auto">
+// // //               {loadingSegments ? (
+// // //                 <div className="text-sm text-gray-500 text-center py-2">Loading segments...</div>
+// // //               ) : availableSegments.length === 0 ? (
+// // //                 <div className="text-sm text-gray-500 text-center py-2">No segments found</div>
+// // //               ) : (
+// // //                 availableSegments.map((seg) => {
+// // //                   const name = seg.segment_name || seg.name;
+// // //                   const isChecked = selectedSegments.includes(name);
+// // //                   return (
+// // //                     <label key={seg.id} className="flex items-center gap-3 py-2 text-sm cursor-pointer select-none">
+// // //                       <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleSegment(seg)} className="sr-only" disabled={isAnySubmitting} />
+// // //                       <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+// // //                         <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+// // //                       </span>
+// // //                       <span>{name}</span>
+// // //                     </label>
+// // //                   );
+// // //                 })
+// // //               )}
+// // //             </div>
+// // //           )}
+// // //         </div>
+// // //       </div>
+
+// // //       {/* BIN Ranges Cards area */}
+// // //       <div className="mt-6 bg-[#FBFCFD] border border-gray-100 rounded p-4">
+// // //         <div className="mb-4 inter-20">BIN Ranges:</div>
+// // //         <div className="overflow-auto" style={{ maxHeight: "150px" }}>
+// // //           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+// // //             {selectedSegments.length === 0 ? (
+// // //               <div className="col-span-1 md:col-span-3 text-sm text-gray-500">No segments selected</div>
+// // //             ) : (
+// // //               selectedSegments.map((segName) => {
+// // //                 const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+// // //                 let availableRanges = originalSeg && originalSeg.bin_ranges ? originalSeg.bin_ranges.map(formatBinRange) : ["N/A - N/A"];
+// // //                 return (
+// // //                   <div key={segName} className="bg-white border border-gray-100 p-4 rounded relative">
+// // //                     <button onClick={() => !isAnySubmitting && removeSegmentCard(segName)} className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#7747EE] text-[8px] flex items-center justify-center text-[#ffffff]" disabled={isAnySubmitting}>✕</button>
+// // //                     <div className="text-sm font-medium mb-2 ">{segName}</div>
+// // //                     <div className="text-xs text-gray-400 mb-3 border-t border-[#E2E8F0]" />
+// // //                     <div className="space-y-3">
+// // //                       {availableRanges.map((r) => {
+// // //                         const isChecked = (segmentRanges[segName] || []).includes(r);
+// // //                         return (
+// // //                           <label key={`${segName}-${r}`} className="flex items-start gap-3 text-sm cursor-pointer select-none">
+// // //                             <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleRangeForSegment(segName, r)} className="sr-only" disabled={isAnySubmitting} />
+// // //                             <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+// // //                               <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-4 h-4 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+// // //                             </span>
+// // //                             <div className="text-xs text-gray-700 leading-5">From - {r.split(" - ")[0]} &nbsp; TO - &nbsp; {r.split(" - ")[1]}</div>
+// // //                           </label>
+// // //                         );
+// // //                       })}
+// // //                       {availableRanges.length === 0 && <div className="text-xs text-gray-400">No BIN ranges defined</div>}
+// // //                     </div>
+// // //                   </div>
+// // //                 );
+// // //               })
+// // //             )}
+// // //           </div>
+// // //         </div>
+// // //       </div>
+
+// // //       {/* Token area */}
+// // //       <div className="mt-4 bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4">
+// // //         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+// // //           <div className="p-3 flex flex-col self-stretch min-h-[160px]">
+// // //             <label className="block text-sm text-gray-700 mb-2">Apple Tokens</label>
+// // //             <textarea
+// // //               value={tokenInput}
+// // //               onChange={(e) => setTokenInput(e.target.value)}
+// // //               onKeyDown={handleTokenKeyDown}
+// // //               placeholder="Enter Apple Tokens (comma separated)"
+// // //               className="w-full flex-1 resize-none border border-[#B0B2F7] rounded p-2 text-sm placeholder-gray-300 focus:outline-none focus:border-2 focus:border-[#7747EE]"
+// // //               disabled={isAnySubmitting}
+// // //             />
+// // //             <button onClick={handleAddTokens} className="mt-3 px-8 h-9 bg-[#7747EE] text-white rounded-full text-sm self-start" type="button" disabled={isAnySubmitting}>ADD</button>
+// // //           </div>
+// // //           <div className="bg-white border border-[#E2E8F0] rounded p-3 self-stretch min-h-[120px]">
+// // //             <div className="text-sm text-gray-700 mb-2">Added Tokens</div>
+// // //             <div className="max-h-[160px] overflow-auto">
+// // //               {tokens.length === 0 ? <div className="text-xs text-gray-400">No tokens added</div> : (
+// // //                 <ul className="space-y-2">
+// // //                   {tokens.map((t) => (
+// // //                     <li key={t.value} className="flex items-center justify-between">
+// // //                       <label className="relative flex items-center gap-3 py-1 cursor-pointer select-none text-sm">
+// // //                         <input type="checkbox" checked={t.checked} onChange={() => !isAnySubmitting && toggleTokenChecked(t.value)} className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 w-4 h-4" disabled={isAnySubmitting} />
+// // //                         <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (t.checked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+// // //                           <svg className={`${t.checked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+// // //                         </span>
+// // //                         <span className="text-xs text-gray-700 pl-1">{t.value}</span>
+// // //                       </label>
+// // //                     </li>
+// // //                   ))}
+// // //                 </ul>
+// // //               )}
+// // //             </div>
+// // //           </div>
+// // //         </div>
+// // //       </div>
+
+// // //       {/* Footer Buttons */}
+// // //       <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+// // //         <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" disabled={isAnySubmitting}>
+// // //           <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Previous</span>
+// // //         </button>
+// // //         <div className="flex gap-3">
+// // //           {isEditMode && (
+// // //             <button onClick={() => handleSubmit('update')} disabled={isAnySubmitting} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors">
+// // //               {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+// // //               {isUpdateSubmitting ? "Updating..." : "Update"}
+// // //             </button>
+// // //           )}
+// // //           <button onClick={() => handleSubmit('next')} disabled={isLoadingData || isAnySubmitting} className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70">
+// // //             {isLoadingData ? <Loader2 className="w-4 h-4 animate-spin" /> : (isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null)}
+// // //             {isLoadingData ? "Loading..." : (isNextSubmitting ? "Saving..." : "Next →")}
+// // //           </button>
+// // //         </div>
+// // //       </div>
+      
+// // //       {isAnySubmitting && (
+// // //           <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">
+// // //               <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+// // //           </div>
+// // //       )}
+// // //     </div>
+// // //   );
+// // // };
+
+// // // export default BINConfig;
+
+
+// // import React, { useEffect, useRef, useState } from "react";
+// // import { Loader2 } from "lucide-react";
+// // import { metadataApi, campaignDiscountApi, campaignApi } from "../utils/metadataApi"; 
+
+// // const BINConfig = ({ 
+// //   data, 
+// //   onUpdate, 
+// //   onNext, 
+// //   onPrevious, 
+// //   campaignId, 
+// //   isEditMode,
+// //   onRefresh
+// // }) => {
+// //   // --- State: Data from API ---
+// //   const [availableSegments, setAvailableSegments] = useState([]);
+// //   const [loadingSegments, setLoadingSegments] = useState(false);
+
+// //   // --- State: UI Controls ---
+// //   const [segmentsOpen, setSegmentsOpen] = useState(false);
+  
+// //   const [selectedSegments, setSelectedSegments] = useState([]); 
+// //   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]); 
+// //   const [segmentRanges, setSegmentRanges] = useState({});
+// //   const [tokens, setTokens] = useState([]); 
+  
+// //   const [tokenInput, setTokenInput] = useState("");
+
+// //   const [isLoadingData, setIsLoadingData] = useState(false);     
+// //   const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false); 
+// //   const [isNextSubmitting, setIsNextSubmitting] = useState(false);     
+  
+// //   const isAnySubmitting = isUpdateSubmitting || isNextSubmitting; 
+  
+// //   const segRef = useRef(null);
+    
+// //     // --- Helper to format API bin object ---
+// //     const formatBinRange = (binObj) => {
+// //         if (!binObj) return "";
+// //         return `${binObj.start_bin} - ${binObj.end_bin}`;
+// //     };
+
+// //     // --- Helper to map API data (READING) to local state ---
+// //     const mapApiDataToState = (discountData) => {
+// //         const segmentsApi = discountData.discount_segments || discountData.segments || [];
+        
+// //         const newSelectedSegments = [];
+// //         const newSelectedSegmentIds = [];
+// //         const newSegmentRanges = {};
+// //         const newTokens = [];
+        
+// //         segmentsApi.forEach(segment => {
+// //             const segName = segment.segment_name || segment.name;
+// //             if (!newSelectedSegments.includes(segName)) {
+// //                 newSelectedSegments.push(segName);
+// //                 newSelectedSegmentIds.push(segment.id || segment.segment_id);
+// //             }
+            
+// //             const masterSegment = availableSegments.find(s => s.id === (segment.id || segment.segment_id) || (s.segment_name || s.name) === segName);
+            
+// //             let masterRanges = [];
+// //             if (masterSegment && masterSegment.bin_ranges?.length > 0) {
+// //                 masterRanges = masterSegment.bin_ranges.map(formatBinRange);
+// //             } else {
+// //                 masterRanges = ["N/A - N/A"];
+// //             }
+
+// //             let selectedRanges = [];
+// //             const apiBins = segment.discount_bins || segment.bin_ranges;
+            
+// //             if (segment.all_bins === true) {
+// //                 selectedRanges = masterRanges;
+// //             } 
+// //             else if (apiBins && apiBins.length > 0) {
+// //                 selectedRanges = apiBins.map(formatBinRange);
+// //             } 
+// //             else {
+// //                 selectedRanges = masterRanges; 
+// //             }
+            
+// //             newSegmentRanges[segName] = selectedRanges;
+
+// //             const apiTokens = segment.discount_apple_tokens || segment.apple_tokens;
+// //             if (apiTokens && apiTokens.length > 0) {
+// //                 apiTokens.forEach(token => {
+// //                     if (!newTokens.some(t => t.value === token.token_value)) {
+// //                         newTokens.push({
+// //                             value: token.token_value,
+// //                             checked: true 
+// //                         });
+// //                     }
+// //                 });
+// //             }
+// //         });
+        
+// //         setSelectedSegments(newSelectedSegments);
+// //         setSelectedSegmentIds(newSelectedSegmentIds);
+// //         setSegmentRanges(newSegmentRanges);
+// //         setTokens(newTokens);
+        
+// //         updateParent({ 
+// //             selectedSegments: newSelectedSegments, 
+// //             selectedSegmentIds: newSelectedSegmentIds, 
+// //             segmentRanges: newSegmentRanges, 
+// //             tokens: newTokens,
+// //             finalSegmentsData: generatePayload(newSelectedSegments, newSegmentRanges, newTokens)
+// //         });
+// //     };
+
+// //   // --- 1. Fetch Segments ---
+// //   useEffect(() => {
+// //     const fetchSegments = async () => {
+// //       setLoadingSegments(true);
+// //       try {
+// //         const res = await metadataApi.getSegments();
+// //         const rows = res.data?.rows || res.data || [];
+// //         setAvailableSegments(rows);
+// //       } catch (err) {
+// //         console.error("Failed to load segments", err);
+// //       } finally {
+// //         setLoadingSegments(false);
+// //       }
+// //     };
+// //     fetchSegments();
+// //   }, []);
+
+// //     // --- 2. Load Existing Data using campaignId ---
+// //     useEffect(() => {
+// //         if (campaignId && availableSegments.length > 0) { 
+// //             const fetchStepData = async () => {
+// //                 setIsLoadingData(true); 
+// //                 try {
+// //                     const res = await campaignDiscountApi.getById(campaignId);
+// //                     const d = res.data?.discount || {};
+                    
+// //                     const hasSegments = (d.discount_segments && d.discount_segments.length > 0) || 
+// //                                       (d.segments && d.segments.length > 0);
+
+// //                     if (d && hasSegments) {
+// //                         mapApiDataToState(d);
+// //                     }
+// //                 } catch (err) {
+// //                     console.error("Failed to load Step 2 details", err);
+// //                 } finally {
+// //                     setIsLoadingData(false); 
+// //                 }
+// //             };
+// //             fetchStepData();
+// //         }
+// //     }, [campaignId, availableSegments.length]);
+
+// //   // --- 3. Initialize from Props (Backup) ---
+// //   useEffect(() => {
+// //     if (data && !isLoadingData && selectedSegments.length === 0) { 
+// //       const cleanData = {
+// //         selectedSegments: Array.isArray(data.selectedSegments) ? data.selectedSegments : [],
+// //         selectedSegmentIds: Array.isArray(data.selectedSegmentIds) ? data.selectedSegmentIds : [],
+// //         segmentRanges: data.segmentRanges && typeof data.segmentRanges === 'object' ? data.segmentRanges : {},
+// //         tokens: Array.isArray(data.tokens) ? data.tokens : [],
+// //       };
+      
+// //       if (cleanData.selectedSegments.length > 0) {
+// //           setSelectedSegments(cleanData.selectedSegments);
+// //           setSelectedSegmentIds(cleanData.selectedSegmentIds);
+// //           setSegmentRanges(cleanData.segmentRanges);
+          
+// //           if (cleanData.tokens && Array.isArray(cleanData.tokens)) {
+// //             setTokens(cleanData.tokens.map((t) => typeof t === "string" ? { value: t, checked: true } : { ...t, checked: !!t.checked }));
+// //           }
+// //       }
+// //     }
+// //   }, [data, isLoadingData]);
+
+// //   // Close dropdown logic
+// //   useEffect(() => {
+// //     const handleClick = (e) => {
+// //       if (segRef.current && !segRef.current.contains(e.target)) setSegmentsOpen(false);
+// //     };
+// //     document.addEventListener("mousedown", handleClick);
+// //     return () => document.removeEventListener("mousedown", handleClick);
+// //   }, []);
+
+// //   // ✅ GENERATE PAYLOAD
+// //   // Filter out segments that have NO bin ranges selected (if they are supposed to have them)
+// //   const generatePayload = (
+// //       currSegments = selectedSegments, 
+// //       currRanges = segmentRanges, 
+// //       currTokens = tokens
+// //   ) => {
+// //       if (currSegments.length === 0) return null;
+
+// //       const payload = currSegments.map(segName => {
+// //           const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+// //           const selectedRanges = currRanges[segName] || [];
+          
+// //           const binRanges = selectedRanges
+// //             .filter(range => range !== "N/A - N/A")
+// //             .map(range => {
+// //               const [startBin, endBin] = range.split(" - ");
+// //               return {
+// //                 start_bin: startBin.trim(),
+// //                 end_bin: endBin.trim(),
+// //               };
+// //             });
+
+// //           // 🛑 SAFETY CHECK: If this segment HAS ranges in metadata, but 0 are selected, exclude it.
+// //           const metadataHasRanges = originalSeg?.bin_ranges && originalSeg.bin_ranges.length > 0;
+// //           if (metadataHasRanges && binRanges.length === 0) {
+// //               return null; // This filters it out from the map result below
+// //           }
+
+// //           const hasSelectedTokens = currTokens.some(t => t.checked);
+// //           const appleTokens = hasSelectedTokens ? currTokens
+// //             .filter(t => t.checked)
+// //             .map(t => ({
+// //               token_value: t.value
+// //             })) : [];
+
+// //           const payloadObj = {
+// //             segment_id: originalSeg?.id,
+// //             all_bins: false, 
+// //             all_tokens: !hasSelectedTokens,    
+// //             apple_tokens: appleTokens 
+// //           };
+
+// //           if (binRanges.length > 0) {
+// //             payloadObj.bin_ranges = binRanges;
+// //           }
+
+// //           return payloadObj;
+// //       }).filter(Boolean); // ✅ Removes any nulls (segments with empty ranges)
+
+// //       return payload;
+// //   };
+
+// //   const updateParent = (updates) => {
+// //     const mergedState = {
+// //         selectedSegments: updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+// //         selectedSegmentIds: updates.selectedSegmentIds !== undefined ? updates.selectedSegmentIds : selectedSegmentIds,
+// //         segmentRanges: updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+// //         tokens: updates.tokens !== undefined ? updates.tokens : tokens,
+// //         finalSegmentsData: updates.finalSegmentsData !== undefined 
+// //             ? updates.finalSegmentsData 
+// //             : generatePayload(
+// //                 updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+// //                 updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+// //                 updates.tokens !== undefined ? updates.tokens : tokens
+// //               )
+// //     };
+    
+// //     onUpdate(mergedState);
+// //   };
+
+// //   // --- Handlers ---
+// //   const handleSubmit = async (action) => { 
+// //     if (selectedSegments.length === 0) {
+// //       alert("Please select at least one segment.");
+// //       return;
+// //     }
+    
+// //     if (action === 'update') setIsUpdateSubmitting(true);
+// //     else setIsNextSubmitting(true);
+   
+// //     try {
+// //       const formattedSegments = generatePayload(selectedSegments, segmentRanges, tokens);
+      
+// //       updateParent({ finalSegmentsData: formattedSegments });
+
+// //       if (!campaignId) {
+// //           throw new Error("Missing Campaign ID. Cannot update.");
+// //       }
+
+// //       const apiBody = {
+// //           discount: {
+// //               segments: formattedSegments || [] // Ensure array
+// //           }
+// //       };
+
+// //       console.log(`📤 PUT Payload to ID ${campaignId}:`, JSON.stringify(apiBody, null, 2));
+      
+// //       await campaignDiscountApi.update(campaignId, apiBody);
+      
+// //       if (action === 'next') {
+// //         onNext(); 
+// //       } else if (action === 'update') {
+// //           if (onRefresh) await onRefresh();
+// //           console.log("✅ Step 2 Updated.");
+// //       }
+
+// //     } catch (error) {
+// //       console.error("❌ Error saving BIN configuration:", error);
+// //       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+// //       alert(`Failed to save configuration. Error: ${errorMsg}`);
+// //     } finally {
+// //       setIsUpdateSubmitting(false);
+// //       setIsNextSubmitting(false);
+// //     }
+// //   };
+
+// //   // ... (Toggle Functions) ...
+// //   const toggleSegment = (segment) => {
+// //     const name = segment.segment_name || segment.name;
+// //     const segmentId = segment.id;
+// //     const isSelected = selectedSegments.includes(name);
+
+// //     let newSelectedNames;
+// //     let newSelectedIds;
+// //     let newRanges = { ...segmentRanges };
+
+// //     if (isSelected) {
+// //       newSelectedNames = selectedSegments.filter((s) => s !== name);
+// //       newSelectedIds = selectedSegmentIds.filter((sid) => sid !== segmentId);
+// //       delete newRanges[name];
+// //     } else {
+// //       newSelectedNames = [...selectedSegments, name];
+// //       newSelectedIds = [...selectedSegmentIds, segmentId];
+
+// //       let currentBins = [];
+// //       if (segment.bin_ranges && segment.bin_ranges.length > 0) {
+// //         currentBins = segment.bin_ranges.map(formatBinRange);
+// //       } else {
+// //         currentBins = ["N/A - N/A"]; 
+// //       }
+// //       newRanges[name] = currentBins;
+// //     }
+
+// //     setSelectedSegments(newSelectedNames);
+// //     setSelectedSegmentIds(newSelectedIds);
+// //     setSegmentRanges(newRanges);
+    
+// //     updateParent({ 
+// //       selectedSegments: newSelectedNames, 
+// //       selectedSegmentIds: newSelectedIds, 
+// //       segmentRanges: newRanges 
+// //     });
+// //   };
+
+// //   const toggleRangeForSegment = (segmentName, rangeString) => {
+// //     const currentRanges = segmentRanges[segmentName] || [];
+// //     let updated;
+// //     if (currentRanges.includes(rangeString)) {
+// //       updated = currentRanges.filter((r) => r !== rangeString);
+// //     } else {
+// //       updated = [...currentRanges, rangeString];
+// //     }
+
+// //     // ✅ NEW LOGIC: If all ranges are deselected, REMOVE the segment completely
+// //     if (updated.length === 0) {
+// //         const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+// //         if (segObj) {
+// //             toggleSegment(segObj); // This removes it from UI, State, and Payload
+// //         }
+// //         return; 
+// //     }
+
+// //     const newSegmentRanges = { ...segmentRanges, [segmentName]: updated };
+// //     setSegmentRanges(newSegmentRanges);
+    
+// //     updateParent({ segmentRanges: newSegmentRanges });
+// //   };
+
+// //   const removeSegmentCard = (segmentName) => {
+// //     const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+// //     if (segObj) toggleSegment(segObj);
+// //   };
+
+// //   const segmentsDisplay = selectedSegments.length ? selectedSegments.join(", ") : "Select segment";
+
+// //   const parseInputToValues = (input) => {
+// //     return input
+// //       .split(/\r?\n|,|;/)
+// //       .map((s) => s.trim())
+// //       .filter((s) => s.length > 0);
+// //   };
+
+// //   const handleAddTokens = () => {
+// //     const values = parseInputToValues(tokenInput);
+// //     if (values.length === 0) {
+// //       setTokenInput("");
+// //       return;
+// //     }
+// //     const existingValues = new Set(tokens.map((t) => t.value));
+// //     const newTokens = values
+// //       .filter((v) => !existingValues.has(v))
+// //       .map((v) => ({ value: v, checked: true }));
+
+// //     if (newTokens.length > 0) {
+// //       const updated = [...tokens, ...newTokens];
+// //       setTokens(updated);
+// //       updateParent({ tokens: updated });
+// //     }
+// //     setTokenInput("");
+// //   };
+
+// //   const toggleTokenChecked = (value) => {
+// //     const updatedTokens = tokens.map((t) => 
+// //       t.value === value ? { ...t, checked: !t.checked } : t
+// //     );
+// //     setTokens(updatedTokens);
+// //     updateParent({ tokens: updatedTokens });
+// //   };
+
+// //   const handleTokenKeyDown = (e) => {
+// //     if (e.key === "Enter" && !e.shiftKey) {
+// //       e.preventDefault();
+// //       handleAddTokens();
+// //     }
+// //   };
+
+// //   if (isLoadingData) {
+// //     return (
+// //       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+// //         <div className="flex items-center justify-center h-64">
+// //           <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+// //           <span className="ml-2 text-gray-600">Loading BIN configuration...</span>
+// //         </div>
+// //       </div>
+// //     );
+// //   }
+
+// //   return (
+// //     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+// //       {/* Header */}
+// //       <div className="flex items-start justify-between mb-4">
+// //         <div className="flex gap-2 items-center">
+// //           <span className="w-5 h-5 text-center bg-[#EFEFFD] text-[#7747EE] rounded-full text-xs flex items-center justify-center mb-2">2</span>
+// //           <h3 className="card-inside-head">BIN Configuration</h3>
+// //         </div>
+// //         <div className="text-xs text-gray-500">Step 2 of 6</div>
+// //         </div>
+
+// //       {/* Controls Row */}
+// //       <div className="bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4 grid grid-cols-1 lg:grid-cols-1 gap-4 items-end">
+// //         <div ref={segRef} className="relative justify-self-start w-full">
+// //           <label className="block text-sm text-gray-700 mb-2">Select Segment Name <span className="text-red-500">*</span></label>
+// //           <div className="flex items-center w-full">
+// //             <button
+// //               type="button"
+// //               onClick={() => setSegmentsOpen(!segmentsOpen)}
+// //               className="flex-1 flex items-center justify-between border border-[#B0B2F7] rounded p-2 bg-white text-sm h-10"
+// //               disabled={isAnySubmitting}
+// //             >
+// //               <span className="text-sm text-gray-700 truncate">{segmentsDisplay}</span>
+// //               <svg className="w-4 h-4 text-gray-400 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+// //             </button>
+// //             <button
+// //               type="button"
+// //               onClick={() => setSegmentsOpen(true)}
+// //               className="ml-4 px-8 bg-[#7747EE] text-white rounded-full text-sm flex-shrink-0 h-9"
+// //               disabled={isAnySubmitting}
+// //             >
+// //               Add
+// //             </button>
+// //           </div>
+
+// //           {segmentsOpen && (
+// //             <div className="absolute z-30 mt-2 w-full bg-white border border-[#E2E8F0] rounded shadow-sm p-3 max-h-48 overflow-auto">
+// //               {loadingSegments ? (
+// //                 <div className="text-sm text-gray-500 text-center py-2">Loading segments...</div>
+// //               ) : availableSegments.length === 0 ? (
+// //                 <div className="text-sm text-gray-500 text-center py-2">No segments found</div>
+// //               ) : (
+// //                 availableSegments.map((seg) => {
+// //                   const name = seg.segment_name || seg.name;
+// //                   const isChecked = selectedSegments.includes(name);
+// //                   return (
+// //                     <label key={seg.id} className="flex items-center gap-3 py-2 text-sm cursor-pointer select-none">
+// //                       <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleSegment(seg)} className="sr-only" disabled={isAnySubmitting} />
+// //                       <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+// //                         <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+// //                       </span>
+// //                       <span>{name}</span>
+// //                     </label>
+// //                   );
+// //                 })
+// //               )}
+// //             </div>
+// //           )}
+// //         </div>
+// //       </div>
+
+// //       {/* BIN Ranges Cards area */}
+// //       <div className="mt-6 bg-[#FBFCFD] border border-gray-100 rounded p-4">
+// //         <div className="mb-4 inter-20">BIN Ranges:</div>
+// //         <div className="overflow-auto" style={{ maxHeight: "150px" }}>
+// //           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+// //             {selectedSegments.length === 0 ? (
+// //               <div className="col-span-1 md:col-span-3 text-sm text-gray-500">No segments selected</div>
+// //             ) : (
+// //               selectedSegments.map((segName) => {
+// //                 const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+// //                 let availableRanges = originalSeg && originalSeg.bin_ranges ? originalSeg.bin_ranges.map(formatBinRange) : ["N/A - N/A"];
+// //                 return (
+// //                   <div key={segName} className="bg-white border border-gray-100 p-4 rounded relative">
+// //                     <button onClick={() => !isAnySubmitting && removeSegmentCard(segName)} className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#7747EE] text-[8px] flex items-center justify-center text-[#ffffff]" disabled={isAnySubmitting}>✕</button>
+// //                     <div className="text-sm font-medium mb-2 ">{segName}</div>
+// //                     <div className="text-xs text-gray-400 mb-3 border-t border-[#E2E8F0]" />
+// //                     <div className="space-y-3">
+// //                       {availableRanges.map((r) => {
+// //                         const isChecked = (segmentRanges[segName] || []).includes(r);
+// //                         return (
+// //                           <label key={`${segName}-${r}`} className="flex items-start gap-3 text-sm cursor-pointer select-none">
+// //                             <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleRangeForSegment(segName, r)} className="sr-only" disabled={isAnySubmitting} />
+// //                             <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+// //                               <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-4 h-4 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+// //                             </span>
+// //                             <div className="text-xs text-gray-700 leading-5">From - {r.split(" - ")[0]} &nbsp; TO - &nbsp; {r.split(" - ")[1]}</div>
+// //                           </label>
+// //                         );
+// //                       })}
+// //                       {availableRanges.length === 0 && <div className="text-xs text-gray-400">No BIN ranges defined</div>}
+// //                     </div>
+// //                   </div>
+// //                 );
+// //               })
+// //             )}
+// //           </div>
+// //         </div>
+// //       </div>
+
+// //       {/* Token area */}
+// //       <div className="mt-4 bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4">
+// //         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+// //           <div className="p-3 flex flex-col self-stretch min-h-[160px]">
+// //             <label className="block text-sm text-gray-700 mb-2">Apple Tokens</label>
+// //             <textarea
+// //               value={tokenInput}
+// //               onChange={(e) => setTokenInput(e.target.value)}
+// //               onKeyDown={handleTokenKeyDown}
+// //               placeholder="Enter Apple Tokens (comma separated)"
+// //               className="w-full flex-1 resize-none border border-[#B0B2F7] rounded p-2 text-sm placeholder-gray-300 focus:outline-none focus:border-2 focus:border-[#7747EE]"
+// //               disabled={isAnySubmitting}
+// //             />
+// //             <button onClick={handleAddTokens} className="mt-3 px-8 h-9 bg-[#7747EE] text-white rounded-full text-sm self-start" type="button" disabled={isAnySubmitting}>ADD</button>
+// //           </div>
+// //           <div className="bg-white border border-[#E2E8F0] rounded p-3 self-stretch min-h-[120px]">
+// //             <div className="text-sm text-gray-700 mb-2">Added Tokens</div>
+// //             <div className="max-h-[160px] overflow-auto">
+// //               {tokens.length === 0 ? <div className="text-xs text-gray-400">No tokens added</div> : (
+// //                 <ul className="space-y-2">
+// //                   {tokens.map((t) => (
+// //                     <li key={t.value} className="flex items-center justify-between">
+// //                       <label className="relative flex items-center gap-3 py-1 cursor-pointer select-none text-sm">
+// //                         <input type="checkbox" checked={t.checked} onChange={() => !isAnySubmitting && toggleTokenChecked(t.value)} className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 w-4 h-4" disabled={isAnySubmitting} />
+// //                         <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (t.checked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+// //                           <svg className={`${t.checked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+// //                         </span>
+// //                         <span className="text-xs text-gray-700 pl-1">{t.value}</span>
+// //                       </label>
+// //                     </li>
+// //                   ))}
+// //                 </ul>
+// //               )}
+// //             </div>
+// //           </div>
+// //         </div>
+// //       </div>
+
+// //       {/* Footer Buttons */}
+// //       <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+// //         <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" disabled={isAnySubmitting}>
+// //           <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Previous</span>
+// //         </button>
+// //         <div className="flex gap-3">
+// //           {isEditMode && (
+// //             <button onClick={() => handleSubmit('update')} disabled={isAnySubmitting} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors">
+// //               {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+// //               {isUpdateSubmitting ? "Updating..." : "Update"}
+// //             </button>
+// //           )}
+// //           <button onClick={() => handleSubmit('next')} disabled={isLoadingData || isAnySubmitting} className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70">
+// //             {isLoadingData ? <Loader2 className="w-4 h-4 animate-spin" /> : (isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null)}
+// //             {isLoadingData ? "Loading..." : (isNextSubmitting ? "Saving..." : "Next →")}
+// //           </button>
+// //         </div>
+// //       </div>
+      
+// //       {isAnySubmitting && (
+// //           <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">
+// //               <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+// //           </div>
+// //       )}
+// //     </div>
+// //   );
+// // };
+
+// // export default BINConfig;
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { Loader2 } from "lucide-react";
+// import { metadataApi, campaignDiscountApi, campaignApi } from "../utils/metadataApi"; 
+
+// const BINConfig = ({ 
+//   data, 
+//   onUpdate, 
+//   onNext, 
+//   onPrevious, 
+//   campaignId, 
+//   isEditMode,
+//   onRefresh
+// }) => {
+//   // --- State: Data from API ---
+//   const [availableSegments, setAvailableSegments] = useState([]);
+//   const [loadingSegments, setLoadingSegments] = useState(false);
+
+//   // --- State: UI Controls ---
+//   const [segmentsOpen, setSegmentsOpen] = useState(false);
+  
+//   const [selectedSegments, setSelectedSegments] = useState([]); 
+//   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]); 
+//   const [segmentRanges, setSegmentRanges] = useState({});
+//   const [tokens, setTokens] = useState([]); 
+  
+//   const [tokenInput, setTokenInput] = useState("");
+
+//   const [isLoadingData, setIsLoadingData] = useState(false);     
+//   const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false); 
+//   const [isNextSubmitting, setIsNextSubmitting] = useState(false);     
+  
+//   const isAnySubmitting = isUpdateSubmitting || isNextSubmitting; 
+  
+//   const segRef = useRef(null);
+    
+//     // --- Helper to format API bin object ---
+//     const formatBinRange = (binObj) => {
+//         if (!binObj) return "";
+//         return `${binObj.start_bin} - ${binObj.end_bin}`;
+//     };
+
+//     // --- Helper to map API data (READING) to local state ---
+//     const mapApiDataToState = (discountData) => {
+//         const segmentsApi = discountData.discount_segments || discountData.segments || [];
+        
+//         const newSelectedSegments = [];
+//         const newSelectedSegmentIds = [];
+//         const newSegmentRanges = {};
+//         const newTokens = [];
+        
+//         segmentsApi.forEach(segment => {
+//             const segName = segment.segment_name || segment.name;
+//             if (!newSelectedSegments.includes(segName)) {
+//                 newSelectedSegments.push(segName);
+//                 newSelectedSegmentIds.push(segment.id || segment.segment_id);
+//             }
+            
+//             const masterSegment = availableSegments.find(s => s.id === (segment.id || segment.segment_id) || (s.segment_name || s.name) === segName);
+            
+//             let masterRanges = [];
+//             if (masterSegment && masterSegment.bin_ranges?.length > 0) {
+//                 masterRanges = masterSegment.bin_ranges.map(formatBinRange);
+//             } else {
+//                 masterRanges = ["N/A - N/A"];
+//             }
+
+//             let selectedRanges = [];
+//             const apiBins = segment.discount_bins || segment.bin_ranges;
+            
+//             if (segment.all_bins === true) {
+//                 selectedRanges = masterRanges;
+//             } 
+//             else if (apiBins && apiBins.length > 0) {
+//                 selectedRanges = apiBins.map(formatBinRange);
+//             } 
+//             else {
+//                 selectedRanges = masterRanges; 
+//             }
+            
+//             newSegmentRanges[segName] = selectedRanges;
+
+//             const apiTokens = segment.discount_apple_tokens || segment.apple_tokens;
+//             if (apiTokens && apiTokens.length > 0) {
+//                 apiTokens.forEach(token => {
+//                     if (!newTokens.some(t => t.value === token.token_value)) {
+//                         newTokens.push({
+//                             value: token.token_value,
+//                             checked: true 
+//                         });
+//                     }
+//                 });
+//             }
+//         });
+        
+//         setSelectedSegments(newSelectedSegments);
+//         setSelectedSegmentIds(newSelectedSegmentIds);
+//         setSegmentRanges(newSegmentRanges);
+//         setTokens(newTokens);
+        
+//         updateParent({ 
+//             selectedSegments: newSelectedSegments, 
+//             selectedSegmentIds: newSelectedSegmentIds, 
+//             segmentRanges: newSegmentRanges, 
+//             tokens: newTokens,
+//             finalSegmentsData: generatePayload(newSelectedSegments, newSegmentRanges, newTokens)
+//         });
+//     };
+
+//   // --- 1. Fetch Segments ---
+//   useEffect(() => {
+//     const fetchSegments = async () => {
+//       setLoadingSegments(true);
+//       try {
+//         const res = await metadataApi.getSegments();
+//         const rows = res.data?.rows || res.data || [];
+//         setAvailableSegments(rows);
+//       } catch (err) {
+//         console.error("Failed to load segments", err);
+//       } finally {
+//         setLoadingSegments(false);
+//       }
+//     };
+//     fetchSegments();
+//   }, []);
+
+//     // --- 2. Load Existing Data using campaignId ---
+//     useEffect(() => {
+//         if (campaignId && availableSegments.length > 0) { 
+//             const fetchStepData = async () => {
+//                 setIsLoadingData(true); 
+//                 try {
+//                     const res = await campaignDiscountApi.getById(campaignId);
+//                     const d = res.data?.discount || {};
+                    
+//                     const hasSegments = (d.discount_segments && d.discount_segments.length > 0) || 
+//                                       (d.segments && d.segments.length > 0);
+
+//                     if (d && hasSegments) {
+//                         mapApiDataToState(d);
+//                     }
+//                 } catch (err) {
+//                     console.error("Failed to load Step 2 details", err);
+//                 } finally {
+//                     setIsLoadingData(false); 
+//                 }
+//             };
+//             fetchStepData();
+//         }
+//     }, [campaignId, availableSegments.length]);
+
+//   // --- 3. Initialize from Props (Backup) ---
+//   useEffect(() => {
+//     if (data && !isLoadingData && selectedSegments.length === 0) { 
+//       const cleanData = {
+//         selectedSegments: Array.isArray(data.selectedSegments) ? data.selectedSegments : [],
+//         selectedSegmentIds: Array.isArray(data.selectedSegmentIds) ? data.selectedSegmentIds : [],
+//         segmentRanges: data.segmentRanges && typeof data.segmentRanges === 'object' ? data.segmentRanges : {},
+//         tokens: Array.isArray(data.tokens) ? data.tokens : [],
+//       };
+      
+//       if (cleanData.selectedSegments.length > 0) {
+//           setSelectedSegments(cleanData.selectedSegments);
+//           setSelectedSegmentIds(cleanData.selectedSegmentIds);
+//           setSegmentRanges(cleanData.segmentRanges);
+          
+//           if (cleanData.tokens && Array.isArray(cleanData.tokens)) {
+//             setTokens(cleanData.tokens.map((t) => typeof t === "string" ? { value: t, checked: true } : { ...t, checked: !!t.checked }));
+//           }
+//       }
+//     }
+//   }, [data, isLoadingData]);
+
+//   // Close dropdown logic
+//   useEffect(() => {
+//     const handleClick = (e) => {
+//       if (segRef.current && !segRef.current.contains(e.target)) setSegmentsOpen(false);
+//     };
+//     document.addEventListener("mousedown", handleClick);
+//     return () => document.removeEventListener("mousedown", handleClick);
+//   }, []);
+
+//   // ✅ GENERATE PAYLOAD
+//   const generatePayload = (
+//       currSegments = selectedSegments, 
+//       currRanges = segmentRanges, 
+//       currTokens = tokens
+//   ) => {
+//       if (currSegments.length === 0) return null;
+
+//       const payload = currSegments.map(segName => {
+//           const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+//           const selectedRanges = currRanges[segName] || [];
+          
+//           const binRanges = selectedRanges
+//             .filter(range => range !== "N/A - N/A")
+//             .map(range => {
+//               const [startBin, endBin] = range.split(" - ");
+//               return {
+//                 start_bin: startBin.trim(),
+//                 end_bin: endBin.trim(),
+//               };
+//             });
+
+//           const metadataHasRanges = originalSeg?.bin_ranges && originalSeg.bin_ranges.length > 0;
+//           if (metadataHasRanges && binRanges.length === 0) {
+//               return null; 
+//           }
+
+//           const hasSelectedTokens = currTokens.some(t => t.checked);
+//           const appleTokens = hasSelectedTokens ? currTokens
+//             .filter(t => t.checked)
+//             .map(t => ({
+//               token_value: t.value
+//             })) : [];
+
+//           const payloadObj = {
+//             segment_id: originalSeg?.id,
+//             all_bins: false, 
+//             all_tokens: !hasSelectedTokens,    
+//             apple_tokens: appleTokens 
+//           };
+
+//           if (binRanges.length > 0) {
+//             payloadObj.bin_ranges = binRanges;
+//           }
+
+//           return payloadObj;
+//       }).filter(Boolean);
+
+//       return payload;
+//   };
+
+//   const updateParent = (updates) => {
+//     const mergedState = {
+//         selectedSegments: updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+//         selectedSegmentIds: updates.selectedSegmentIds !== undefined ? updates.selectedSegmentIds : selectedSegmentIds,
+//         segmentRanges: updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+//         tokens: updates.tokens !== undefined ? updates.tokens : tokens,
+//         finalSegmentsData: updates.finalSegmentsData !== undefined 
+//             ? updates.finalSegmentsData 
+//             : generatePayload(
+//                 updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+//                 updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+//                 updates.tokens !== undefined ? updates.tokens : tokens
+//               )
+//     };
+    
+//     onUpdate(mergedState);
+//   };
+
+//   // --- Handlers ---
+//   const handleSubmit = async (action) => { 
+//     if (selectedSegments.length === 0) {
+//       alert("Please select at least one segment.");
+//       return;
+//     }
+    
+//     if (action === 'update') setIsUpdateSubmitting(true);
+//     else setIsNextSubmitting(true);
+   
+//     try {
+//       const formattedSegments = generatePayload(selectedSegments, segmentRanges, tokens);
+      
+//       updateParent({ finalSegmentsData: formattedSegments });
+
+//       if (!campaignId) {
+//           throw new Error("Missing Campaign ID. Cannot update.");
+//       }
+
+//       const apiBody = {
+//           discount: {
+//               segments: formattedSegments || [] 
+//           }
+//       };
+
+//       console.log(`📤 PUT Payload to ID ${campaignId}:`, JSON.stringify(apiBody, null, 2));
+      
+//       await campaignDiscountApi.update(campaignId, apiBody);
+      
+//       if (action === 'next') {
+//         onNext(); 
+//       } else if (action === 'update') {
+//           if (onRefresh) await onRefresh();
+//           console.log("✅ Step 2 Updated.");
+//       }
+
+//     } catch (error) {
+//       console.error("❌ Error saving BIN configuration:", error);
+//       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+//       alert(`Failed to save configuration. Error: ${errorMsg}`);
+//     } finally {
+//       setIsUpdateSubmitting(false);
+//       setIsNextSubmitting(false);
+//     }
+//   };
+
+//   // --- Toggle Functions ---
+//   const toggleSegment = (segment) => {
+//     const name = segment.segment_name || segment.name;
+//     const segmentId = segment.id;
+//     const isSelected = selectedSegments.includes(name);
+
+//     let newSelectedNames;
+//     let newSelectedIds;
+//     let newRanges = { ...segmentRanges };
+//     let newTokens = [...tokens]; 
+
+//     if (isSelected) {
+//       // --- REMOVE LOGIC ---
+//       newSelectedNames = selectedSegments.filter((s) => s !== name);
+//       newSelectedIds = selectedSegmentIds.filter((sid) => sid !== segmentId);
+//       delete newRanges[name];
+
+//       // ✅ FIX: Remove associated tokens
+//       const segTokens = segment.apple_tokens || segment.discount_apple_tokens || [];
+//       if (segTokens.length > 0) {
+//           // 1. Identify tokens used by OTHER selected segments (so we keep them)
+//           const otherTokensSet = new Set();
+//           newSelectedNames.forEach(otherName => {
+//               const otherSeg = availableSegments.find(s => (s.segment_name || s.name) === otherName);
+//               if (otherSeg) {
+//                   const otherSegTokens = otherSeg.apple_tokens || otherSeg.discount_apple_tokens || [];
+//                   otherSegTokens.forEach(t => otherTokensSet.add(t.token_value || t));
+//               }
+//           });
+
+//           // 2. Filter Global list
+//           newTokens = tokens.filter(t => {
+//               const tokenValue = t.value;
+//               const isTokenInRemovedSeg = segTokens.some(st => (st.token_value || st) === tokenValue);
+              
+//               // Keep it if: It's NOT in the removed segment OR It IS in another selected segment
+//               if (!isTokenInRemovedSeg) return true; 
+//               if (otherTokensSet.has(tokenValue)) return true;
+//               return false; // Otherwise, remove it
+//           });
+//       }
+
+//     } else {
+//       // --- ADD LOGIC ---
+//       newSelectedNames = [...selectedSegments, name];
+//       newSelectedIds = [...selectedSegmentIds, segmentId];
+
+//       let currentBins = [];
+//       if (segment.bin_ranges && segment.bin_ranges.length > 0) {
+//         currentBins = segment.bin_ranges.map(formatBinRange);
+//       } else {
+//         currentBins = ["N/A - N/A"]; 
+//       }
+//       newRanges[name] = currentBins;
+
+//       // ✅ Add Tokens
+//       const metaTokens = segment.apple_tokens || segment.discount_apple_tokens || [];
+//       if (metaTokens.length > 0) {
+//           metaTokens.forEach(t => {
+//               const val = t.token_value || t; 
+//               if (!newTokens.some(existing => existing.value === val)) {
+//                   newTokens.push({ value: val, checked: true });
+//               }
+//           });
+//       }
+//     }
+
+//     setSelectedSegments(newSelectedNames);
+//     setSelectedSegmentIds(newSelectedIds);
+//     setSegmentRanges(newRanges);
+//     setTokens(newTokens); 
+    
+//     updateParent({ 
+//       selectedSegments: newSelectedNames, 
+//       selectedSegmentIds: newSelectedIds, 
+//       segmentRanges: newRanges,
+//       tokens: newTokens 
+//     });
+//   };
+
+//   const toggleRangeForSegment = (segmentName, rangeString) => {
+//     const currentRanges = segmentRanges[segmentName] || [];
+//     let updated;
+//     if (currentRanges.includes(rangeString)) {
+//       updated = currentRanges.filter((r) => r !== rangeString);
+//     } else {
+//       updated = [...currentRanges, rangeString];
+//     }
+
+//     if (updated.length === 0) {
+//         const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+//         if (segObj) {
+//             toggleSegment(segObj); 
+//         }
+//         return; 
+//     }
+
+//     const newSegmentRanges = { ...segmentRanges, [segmentName]: updated };
+//     setSegmentRanges(newSegmentRanges);
+    
+//     updateParent({ segmentRanges: newSegmentRanges });
+//   };
+
+//   const removeSegmentCard = (segmentName) => {
+//     const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+//     if (segObj) toggleSegment(segObj);
+//   };
+
+//   const segmentsDisplay = selectedSegments.length ? selectedSegments.join(", ") : "Select segment";
+
+//   const parseInputToValues = (input) => {
+//     return input
+//       .split(/\r?\n|,|;/)
+//       .map((s) => s.trim())
+//       .filter((s) => s.length > 0);
+//   };
+
+//   const handleAddTokens = () => {
+//     const values = parseInputToValues(tokenInput);
+//     if (values.length === 0) {
+//       setTokenInput("");
+//       return;
+//     }
+//     const existingValues = new Set(tokens.map((t) => t.value));
+//     const newTokens = values
+//       .filter((v) => !existingValues.has(v))
+//       .map((v) => ({ value: v, checked: true }));
+
+//     if (newTokens.length > 0) {
+//       const updated = [...tokens, ...newTokens];
+//       setTokens(updated);
+//       updateParent({ tokens: updated });
+//     }
+//     setTokenInput("");
+//   };
+
+//   const toggleTokenChecked = (value) => {
+//     const updatedTokens = tokens.map((t) => 
+//       t.value === value ? { ...t, checked: !t.checked } : t
+//     );
+//     setTokens(updatedTokens);
+//     updateParent({ tokens: updatedTokens });
+//   };
+
+//   const handleTokenKeyDown = (e) => {
+//     if (e.key === "Enter" && !e.shiftKey) {
+//       e.preventDefault();
+//       handleAddTokens();
+//     }
+//   };
+
+//   if (isLoadingData) {
+//     return (
+//       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+//         <div className="flex items-center justify-center h-64">
+//           <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+//           <span className="ml-2 text-gray-600">Loading BIN configuration...</span>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+//       {/* Header */}
+//       <div className="flex items-start justify-between mb-4">
+//         <div className="flex gap-2 items-center">
+//           <span className="w-5 h-5 text-center bg-[#EFEFFD] text-[#7747EE] rounded-full text-xs flex items-center justify-center mb-2">2</span>
+//           <h3 className="card-inside-head">BIN Configuration</h3>
+//         </div>
+//         <div className="text-xs text-gray-500">Step 2 of 6</div>
+//         </div>
+
+//       {/* Controls Row */}
+//       <div className="bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4 grid grid-cols-1 lg:grid-cols-1 gap-4 items-end">
+//         <div ref={segRef} className="relative justify-self-start w-full">
+//           <label className="block text-sm text-gray-700 mb-2">Select Segment Name <span className="text-red-500">*</span></label>
+//           <div className="flex items-center w-full">
+//             <button
+//               type="button"
+//               onClick={() => setSegmentsOpen(!segmentsOpen)}
+//               className="flex-1 flex items-center justify-between border border-[#B0B2F7] rounded p-2 bg-white text-sm h-10"
+//               disabled={isAnySubmitting}
+//             >
+//               <span className="text-sm text-gray-700 truncate">{segmentsDisplay}</span>
+//               <svg className="w-4 h-4 text-gray-400 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+//             </button>
+//             <button
+//               type="button"
+//               onClick={() => setSegmentsOpen(true)}
+//               className="ml-4 px-8 bg-[#7747EE] text-white rounded-full text-sm flex-shrink-0 h-9"
+//               disabled={isAnySubmitting}
+//             >
+//               Add
+//             </button>
+//           </div>
+
+//           {segmentsOpen && (
+//             <div className="absolute z-30 mt-2 w-full bg-white border border-[#E2E8F0] rounded shadow-sm p-3 max-h-48 overflow-auto">
+//               {loadingSegments ? (
+//                 <div className="text-sm text-gray-500 text-center py-2">Loading segments...</div>
+//               ) : availableSegments.length === 0 ? (
+//                 <div className="text-sm text-gray-500 text-center py-2">No segments found</div>
+//               ) : (
+//                 availableSegments.map((seg) => {
+//                   const name = seg.segment_name || seg.name;
+//                   const isChecked = selectedSegments.includes(name);
+//                   return (
+//                     <label key={seg.id} className="flex items-center gap-3 py-2 text-sm cursor-pointer select-none">
+//                       <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleSegment(seg)} className="sr-only" disabled={isAnySubmitting} />
+//                       <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+//                         <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+//                       </span>
+//                       <span>{name}</span>
+//                     </label>
+//                   );
+//                 })
+//               )}
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* BIN Ranges Cards area */}
+//       <div className="mt-6 bg-[#FBFCFD] border border-gray-100 rounded p-4">
+//         <div className="mb-4 inter-20">BIN Ranges:</div>
+//         <div className="overflow-auto" style={{ maxHeight: "150px" }}>
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             {selectedSegments.length === 0 ? (
+//               <div className="col-span-1 md:col-span-3 text-sm text-gray-500">No segments selected</div>
+//             ) : (
+//               selectedSegments.map((segName) => {
+//                 const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+//                 let availableRanges = originalSeg && originalSeg.bin_ranges ? originalSeg.bin_ranges.map(formatBinRange) : ["N/A - N/A"];
+//                 return (
+//                   <div key={segName} className="bg-white border border-gray-100 p-4 rounded relative">
+//                     <button onClick={() => !isAnySubmitting && removeSegmentCard(segName)} className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#7747EE] text-[8px] flex items-center justify-center text-[#ffffff]" disabled={isAnySubmitting}>✕</button>
+//                     <div className="text-sm font-medium mb-2 ">{segName}</div>
+//                     <div className="text-xs text-gray-400 mb-3 border-t border-[#E2E8F0]" />
+//                     <div className="space-y-3">
+//                       {availableRanges.map((r) => {
+//                         const isChecked = (segmentRanges[segName] || []).includes(r);
+//                         return (
+//                           <label key={`${segName}-${r}`} className="flex items-start gap-3 text-sm cursor-pointer select-none">
+//                             <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleRangeForSegment(segName, r)} className="sr-only" disabled={isAnySubmitting} />
+//                             <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+//                               <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-4 h-4 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+//                             </span>
+//                             <div className="text-xs text-gray-700 leading-5">From - {r.split(" - ")[0]} &nbsp; TO - &nbsp; {r.split(" - ")[1]}</div>
+//                           </label>
+//                         );
+//                       })}
+//                       {availableRanges.length === 0 && <div className="text-xs text-gray-400">No BIN ranges defined</div>}
+//                     </div>
+//                   </div>
+//                 );
+//               })
+//             )}
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Token area */}
+//       <div className="mt-4 bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4">
+//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+//           <div className="p-3 flex flex-col self-stretch min-h-[160px]">
+//             <label className="block text-sm text-gray-700 mb-2">Apple Tokens</label>
+//             <textarea
+//               value={tokenInput}
+//               onChange={(e) => setTokenInput(e.target.value)}
+//               onKeyDown={handleTokenKeyDown}
+//               placeholder="Enter Apple Tokens (comma separated)"
+//               className="w-full flex-1 resize-none border border-[#B0B2F7] rounded p-2 text-sm placeholder-gray-300 focus:outline-none focus:border-2 focus:border-[#7747EE]"
+//               disabled={isAnySubmitting}
+//             />
+//             <button onClick={handleAddTokens} className="mt-3 px-8 h-9 bg-[#7747EE] text-white rounded-full text-sm self-start" type="button" disabled={isAnySubmitting}>ADD</button>
+//           </div>
+//           <div className="bg-white border border-[#E2E8F0] rounded p-3 self-stretch min-h-[120px]">
+//             <div className="text-sm text-gray-700 mb-2">Added Tokens</div>
+//             <div className="max-h-[160px] overflow-auto">
+//               {tokens.length === 0 ? <div className="text-xs text-gray-400">No tokens added</div> : (
+//                 <ul className="space-y-2">
+//                   {tokens.map((t) => (
+//                     <li key={t.value} className="flex items-center justify-between">
+//                       <label className="relative flex items-center gap-3 py-1 cursor-pointer select-none text-sm">
+//                         <input type="checkbox" checked={t.checked} onChange={() => !isAnySubmitting && toggleTokenChecked(t.value)} className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 w-4 h-4" disabled={isAnySubmitting} />
+//                         <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (t.checked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+//                           <svg className={`${t.checked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+//                         </span>
+//                         <span className="text-xs text-gray-700 pl-1">{t.value}</span>
+//                       </label>
+//                     </li>
+//                   ))}
+//                 </ul>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Footer Buttons */}
+//       <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+//         <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" disabled={isAnySubmitting}>
+//           <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Previous</span>
+//         </button>
+//         <div className="flex gap-3">
+//           {isEditMode && (
+//             <button onClick={() => handleSubmit('update')} disabled={isAnySubmitting} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors">
+//               {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+//               {isUpdateSubmitting ? "Updating..." : "Update"}
+//             </button>
+//           )}
+//           <button onClick={() => handleSubmit('next')} disabled={isLoadingData || isAnySubmitting} className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70">
+//             {isLoadingData ? <Loader2 className="w-4 h-4 animate-spin" /> : (isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null)}
+//             {isLoadingData ? "Loading..." : (isNextSubmitting ? "Saving..." : "Next →")}
+//           </button>
+//         </div>
+//       </div>
+      
+//       {isAnySubmitting && (
+//           <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">
+//               <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+//           </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default BINConfig;
+
+import React, { useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { metadataApi, campaignDiscountApi, campaignApi } from "../utils/metadataApi"; 
+
+const BINConfig = ({ 
+  data, 
+  onUpdate, 
+  onNext, 
+  onPrevious, 
+  campaignId, 
+  isEditMode,
+  onRefresh
+}) => {
+  // --- State: Data from API ---
+  const [availableSegments, setAvailableSegments] = useState([]);
+  const [loadingSegments, setLoadingSegments] = useState(false);
+
+  // --- State: UI Controls ---
+  const [segmentsOpen, setSegmentsOpen] = useState(false);
+  
+  const [selectedSegments, setSelectedSegments] = useState([]); 
+  const [selectedSegmentIds, setSelectedSegmentIds] = useState([]); 
+  const [segmentRanges, setSegmentRanges] = useState({});
+  const [tokens, setTokens] = useState([]); 
+  
+  const [tokenInput, setTokenInput] = useState("");
+
+  const [isLoadingData, setIsLoadingData] = useState(false);     
+  const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false); 
+  const [isNextSubmitting, setIsNextSubmitting] = useState(false);     
+  
+  const isAnySubmitting = isUpdateSubmitting || isNextSubmitting; 
+  
+  const segRef = useRef(null);
+    
+    // --- Helper to format API bin object ---
+    const formatBinRange = (binObj) => {
+        if (!binObj) return "";
+        return `${binObj.start_bin} - ${binObj.end_bin}`;
+    };
+
+    // --- Helper to map API data (READING) to local state ---
+    const mapApiDataToState = (discountData) => {
+        const segmentsApi = discountData.discount_segments || discountData.segments || [];
+        
+        const newSelectedSegments = [];
+        const newSelectedSegmentIds = [];
+        const newSegmentRanges = {};
+        const newTokens = [];
+        
+        segmentsApi.forEach(segment => {
+            const segName = segment.segment_name || segment.name;
+            if (!newSelectedSegments.includes(segName)) {
+                newSelectedSegments.push(segName);
+                newSelectedSegmentIds.push(segment.id || segment.segment_id);
+            }
+            
+            const masterSegment = availableSegments.find(s => s.id === (segment.id || segment.segment_id) || (s.segment_name || s.name) === segName);
+            
+            let masterRanges = [];
+            if (masterSegment && masterSegment.bin_ranges?.length > 0) {
+                masterRanges = masterSegment.bin_ranges.map(formatBinRange);
+            } else {
+                masterRanges = ["N/A - N/A"];
+            }
+
+            let selectedRanges = [];
+            const apiBins = segment.discount_bins || segment.bin_ranges;
+            
+            if (segment.all_bins === true) {
+                selectedRanges = masterRanges;
+            } 
+            else if (apiBins && apiBins.length > 0) {
+                selectedRanges = apiBins.map(formatBinRange);
+            } 
+            else {
+                selectedRanges = masterRanges; 
+            }
+            
+            newSegmentRanges[segName] = selectedRanges;
+
+            const apiTokens = segment.discount_apple_tokens || segment.apple_tokens;
+            if (apiTokens && apiTokens.length > 0) {
+                apiTokens.forEach(token => {
+                    if (!newTokens.some(t => t.value === token.token_value)) {
+                        newTokens.push({
+                            value: token.token_value,
+                            checked: true 
+                        });
+                    }
+                });
+            }
+        });
+        
+        setSelectedSegments(newSelectedSegments);
+        setSelectedSegmentIds(newSelectedSegmentIds);
+        setSegmentRanges(newSegmentRanges);
+        setTokens(newTokens);
+        
+        updateParent({ 
+            selectedSegments: newSelectedSegments, 
+            selectedSegmentIds: newSelectedSegmentIds, 
+            segmentRanges: newSegmentRanges, 
+            tokens: newTokens,
+            finalSegmentsData: generatePayload(newSelectedSegments, newSegmentRanges, newTokens)
+        });
+    };
+
+  // --- 1. Fetch Segments ---
+  useEffect(() => {
+    const fetchSegments = async () => {
+      setLoadingSegments(true);
+      try {
+        const res = await metadataApi.getSegments();
+        const rows = res.data?.rows || res.data || [];
+        setAvailableSegments(rows);
+      } catch (err) {
+        console.error("Failed to load segments", err);
+      } finally {
+        setLoadingSegments(false);
+      }
+    };
+    fetchSegments();
+  }, []);
+
+    // --- 2. Load Existing Data using campaignId ---
+    useEffect(() => {
+        if (campaignId && availableSegments.length > 0) { 
+            const fetchStepData = async () => {
+                setIsLoadingData(true); 
+                try {
+                    const res = await campaignDiscountApi.getById(campaignId);
+                    const d = res.data?.discount || {};
+                    
+                    const hasSegments = (d.discount_segments && d.discount_segments.length > 0) || 
+                                        (d.segments && d.segments.length > 0);
+
+                    if (d && hasSegments) {
+                        mapApiDataToState(d);
+                    }
+                } catch (err) {
+                    console.error("Failed to load Step 2 details", err);
+                } finally {
+                    setIsLoadingData(false); 
+                }
+            };
+            fetchStepData();
+        }
+    }, [campaignId, availableSegments.length]);
+
+  // --- 3. Initialize from Props (Backup) ---
+  useEffect(() => {
+    if (data && !isLoadingData && selectedSegments.length === 0) { 
+      const cleanData = {
+        selectedSegments: Array.isArray(data.selectedSegments) ? data.selectedSegments : [],
+        selectedSegmentIds: Array.isArray(data.selectedSegmentIds) ? data.selectedSegmentIds : [],
+        segmentRanges: data.segmentRanges && typeof data.segmentRanges === 'object' ? data.segmentRanges : {},
+        tokens: Array.isArray(data.tokens) ? data.tokens : [],
+      };
+      
+      if (cleanData.selectedSegments.length > 0) {
+          setSelectedSegments(cleanData.selectedSegments);
+          setSelectedSegmentIds(cleanData.selectedSegmentIds);
+          setSegmentRanges(cleanData.segmentRanges);
+          
+          if (cleanData.tokens && Array.isArray(cleanData.tokens)) {
+            setTokens(cleanData.tokens.map((t) => typeof t === "string" ? { value: t, checked: true } : { ...t, checked: !!t.checked }));
+          }
+      }
+    }
+  }, [data, isLoadingData]);
+
+  // Close dropdown logic
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (segRef.current && !segRef.current.contains(e.target)) setSegmentsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // ✅ GENERATE PAYLOAD
+  const generatePayload = (
+      currSegments = selectedSegments, 
+      currRanges = segmentRanges, 
+      currTokens = tokens
+  ) => {
+      if (currSegments.length === 0) return null;
+
+      const payload = currSegments.map(segName => {
+          const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+          const selectedRanges = currRanges[segName] || [];
+          
+          const binRanges = selectedRanges
+            .filter(range => range !== "N/A - N/A")
+            .map(range => {
+              const [startBin, endBin] = range.split(" - ");
+              return {
+                start_bin: startBin.trim(),
+                end_bin: endBin.trim(),
+              };
+            });
+
+          const metadataHasRanges = originalSeg?.bin_ranges && originalSeg.bin_ranges.length > 0;
+          if (metadataHasRanges && binRanges.length === 0) {
+              return null; 
+          }
+
+          const hasSelectedTokens = currTokens.some(t => t.checked);
+          const appleTokens = hasSelectedTokens ? currTokens
+            .filter(t => t.checked)
+            .map(t => ({
+              token_value: t.value
+            })) : [];
+
+          const payloadObj = {
+            segment_id: originalSeg?.id,
+            all_bins: false, 
+            all_tokens: !hasSelectedTokens,    
+            apple_tokens: appleTokens 
+          };
+
+          if (binRanges.length > 0) {
+            payloadObj.bin_ranges = binRanges;
+          }
+
+          return payloadObj;
+      }).filter(Boolean);
+
+      return payload;
+  };
+
+  const updateParent = (updates) => {
+    const mergedState = {
+        selectedSegments: updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+        selectedSegmentIds: updates.selectedSegmentIds !== undefined ? updates.selectedSegmentIds : selectedSegmentIds,
+        segmentRanges: updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+        tokens: updates.tokens !== undefined ? updates.tokens : tokens,
+        finalSegmentsData: updates.finalSegmentsData !== undefined 
+            ? updates.finalSegmentsData 
+            : generatePayload(
+                updates.selectedSegments !== undefined ? updates.selectedSegments : selectedSegments,
+                updates.segmentRanges !== undefined ? updates.segmentRanges : segmentRanges,
+                updates.tokens !== undefined ? updates.tokens : tokens
+              )
+    };
+    
+    onUpdate(mergedState);
+  };
+
+  // --- Handlers ---
+  const handleSubmit = async (action) => { 
+    if (selectedSegments.length === 0) {
+      alert("Please select at least one segment.");
+      return;
+    }
+    
+    if (action === 'update') setIsUpdateSubmitting(true);
+    else setIsNextSubmitting(true);
+   
+    try {
+      const formattedSegments = generatePayload(selectedSegments, segmentRanges, tokens);
+      
+      // Always update parent state so Step 6 has the latest data
+      updateParent({ finalSegmentsData: formattedSegments });
+
+      // ✅ DECISION LOGIC:
+      // 1. Wizard Mode (!isEditMode): Always Save.
+      // 2. Edit Mode (isEditMode): Only Save if action is 'update'.
+      const shouldCallApi = !isEditMode || action === 'update';
+
+      if (shouldCallApi) {
+          if (!campaignId) {
+              throw new Error("Missing Campaign ID. Cannot update.");
+          }
+
+          const apiBody = {
+              discount: {
+                  segments: formattedSegments || [] 
+              }
+          };
+
+          console.log(`📤 PUT Payload to ID ${campaignId}:`, JSON.stringify(apiBody, null, 2));
+          await campaignDiscountApi.update(campaignId, apiBody);
+          
+          if (action === 'update') {
+              if (onRefresh) await onRefresh();
+              console.log("✅ Step 2 Updated.");
+          }
+      } else {
+          console.log("ℹ️ Edit Mode Next: Skipping API call, local state updated.");
+      }
+      
+      // Navigation
+      if (action === 'next') {
+        onNext(); 
+      }
+
+    } catch (error) {
+      console.error("❌ Error saving BIN configuration:", error);
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      alert(`Failed to save configuration. Error: ${errorMsg}`);
+    } finally {
+      setIsUpdateSubmitting(false);
+      setIsNextSubmitting(false);
+    }
+  };
+
+  // --- Toggle Functions ---
+  const toggleSegment = (segment) => {
+    const name = segment.segment_name || segment.name;
+    const segmentId = segment.id;
+    const isSelected = selectedSegments.includes(name);
+
+    let newSelectedNames;
+    let newSelectedIds;
+    let newRanges = { ...segmentRanges };
+    let newTokens = [...tokens]; 
+
+    if (isSelected) {
+      // --- REMOVE LOGIC ---
+      newSelectedNames = selectedSegments.filter((s) => s !== name);
+      newSelectedIds = selectedSegmentIds.filter((sid) => sid !== segmentId);
+      delete newRanges[name];
+
+      // Remove associated tokens safely
+      const segTokens = segment.apple_tokens || segment.discount_apple_tokens || [];
+      if (segTokens.length > 0) {
+          const otherTokensSet = new Set();
+          newSelectedNames.forEach(otherName => {
+              const otherSeg = availableSegments.find(s => (s.segment_name || s.name) === otherName);
+              if (otherSeg) {
+                  const otherSegTokens = otherSeg.apple_tokens || otherSeg.discount_apple_tokens || [];
+                  otherSegTokens.forEach(t => otherTokensSet.add(t.token_value || t));
+              }
+          });
+
+          newTokens = tokens.filter(t => {
+              const tokenValue = t.value;
+              const isTokenInRemovedSeg = segTokens.some(st => (st.token_value || st) === tokenValue);
+              
+              if (!isTokenInRemovedSeg) return true; 
+              if (otherTokensSet.has(tokenValue)) return true;
+              return false; 
+          });
+      }
+
+    } else {
+      // --- ADD LOGIC ---
+      newSelectedNames = [...selectedSegments, name];
+      newSelectedIds = [...selectedSegmentIds, segmentId];
+
+      let currentBins = [];
+      if (segment.bin_ranges && segment.bin_ranges.length > 0) {
+        currentBins = segment.bin_ranges.map(formatBinRange);
+      } else {
+        currentBins = ["N/A - N/A"]; 
+      }
+      newRanges[name] = currentBins;
+
+      const metaTokens = segment.apple_tokens || segment.discount_apple_tokens || [];
+      if (metaTokens.length > 0) {
+          metaTokens.forEach(t => {
+              const val = t.token_value || t; 
+              if (!newTokens.some(existing => existing.value === val)) {
+                  newTokens.push({ value: val, checked: true });
+              }
+          });
+      }
+    }
+
+    setSelectedSegments(newSelectedNames);
+    setSelectedSegmentIds(newSelectedIds);
+    setSegmentRanges(newRanges);
+    setTokens(newTokens); 
+    
+    updateParent({ 
+      selectedSegments: newSelectedNames, 
+      selectedSegmentIds: newSelectedIds, 
+      segmentRanges: newRanges,
+      tokens: newTokens 
+    });
+  };
+
+  const toggleRangeForSegment = (segmentName, rangeString) => {
+    const currentRanges = segmentRanges[segmentName] || [];
+    let updated;
+    if (currentRanges.includes(rangeString)) {
+      updated = currentRanges.filter((r) => r !== rangeString);
+    } else {
+      updated = [...currentRanges, rangeString];
+    }
+
+    if (updated.length === 0) {
+        const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+        if (segObj) {
+            toggleSegment(segObj); 
+        }
+        return; 
+    }
+
+    const newSegmentRanges = { ...segmentRanges, [segmentName]: updated };
+    setSegmentRanges(newSegmentRanges);
+    
+    updateParent({ segmentRanges: newSegmentRanges });
+  };
+
+  const removeSegmentCard = (segmentName) => {
+    const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
+    if (segObj) toggleSegment(segObj);
+  };
+
+  const segmentsDisplay = selectedSegments.length ? selectedSegments.join(", ") : "Select segment";
+
+  const parseInputToValues = (input) => {
+    return input
+      .split(/\r?\n|,|;/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  };
+
+  const handleAddTokens = () => {
+    const values = parseInputToValues(tokenInput);
+    if (values.length === 0) {
+      setTokenInput("");
+      return;
+    }
+    const existingValues = new Set(tokens.map((t) => t.value));
+    const newTokens = values
+      .filter((v) => !existingValues.has(v))
+      .map((v) => ({ value: v, checked: true }));
+
+    if (newTokens.length > 0) {
+      const updated = [...tokens, ...newTokens];
+      setTokens(updated);
+      updateParent({ tokens: updated });
+    }
+    setTokenInput("");
+  };
+
+  const toggleTokenChecked = (value) => {
+    const updatedTokens = tokens.map((t) => 
+      t.value === value ? { ...t, checked: !t.checked } : t
+    );
+    setTokens(updatedTokens);
+    updateParent({ tokens: updatedTokens });
+  };
+
+  const handleTokenKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAddTokens();
+    }
+  };
+
+  if (isLoadingData) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+          <span className="ml-2 text-gray-600">Loading BIN configuration...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex gap-2 items-center">
+          <span className="w-5 h-5 text-center bg-[#EFEFFD] text-[#7747EE] rounded-full text-xs flex items-center justify-center mb-2">2</span>
+          <h3 className="card-inside-head">BIN Configuration</h3>
+        </div>
+        <div className="text-xs text-gray-500">Step 2 of 6</div>
+        </div>
+
+      {/* Controls Row */}
+      <div className="bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4 grid grid-cols-1 lg:grid-cols-1 gap-4 items-end">
+        <div ref={segRef} className="relative justify-self-start w-full">
+          <label className="block text-sm text-gray-700 mb-2">Select Segment Name <span className="text-red-500">*</span></label>
+          <div className="flex items-center w-full">
+            <button
+              type="button"
+              onClick={() => setSegmentsOpen(!segmentsOpen)}
+              className="flex-1 flex items-center justify-between border border-[#B0B2F7] rounded p-2 bg-white text-sm h-10"
+              disabled={isAnySubmitting}
+            >
+              <span className="text-sm text-gray-700 truncate">{segmentsDisplay}</span>
+              <svg className="w-4 h-4 text-gray-400 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSegmentsOpen(true)}
+              className="ml-4 px-8 bg-[#7747EE] text-white rounded-full text-sm flex-shrink-0 h-9"
+              disabled={isAnySubmitting}
+            >
+              Add
+            </button>
+          </div>
+
+          {segmentsOpen && (
+            <div className="absolute z-30 mt-2 w-full bg-white border border-[#E2E8F0] rounded shadow-sm p-3 max-h-48 overflow-auto">
+              {loadingSegments ? (
+                <div className="text-sm text-gray-500 text-center py-2">Loading segments...</div>
+              ) : availableSegments.length === 0 ? (
+                <div className="text-sm text-gray-500 text-center py-2">No segments found</div>
+              ) : (
+                availableSegments.map((seg) => {
+                  const name = seg.segment_name || seg.name;
+                  const isChecked = selectedSegments.includes(name);
+                  return (
+                    <label key={seg.id} className="flex items-center gap-3 py-2 text-sm cursor-pointer select-none">
+                      <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleSegment(seg)} className="sr-only" disabled={isAnySubmitting} />
+                      <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+                        <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                      </span>
+                      <span>{name}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* BIN Ranges Cards area */}
+      <div className="mt-6 bg-[#FBFCFD] border border-gray-100 rounded p-4">
+        <div className="mb-4 inter-20">BIN Ranges:</div>
+        <div className="overflow-auto" style={{ maxHeight: "150px" }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {selectedSegments.length === 0 ? (
+              <div className="col-span-1 md:col-span-3 text-sm text-gray-500">No segments selected</div>
+            ) : (
+              selectedSegments.map((segName) => {
+                const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
+                let availableRanges = originalSeg && originalSeg.bin_ranges ? originalSeg.bin_ranges.map(formatBinRange) : ["N/A - N/A"];
+                return (
+                  <div key={segName} className="bg-white border border-gray-100 p-4 rounded relative">
+                    <button onClick={() => !isAnySubmitting && removeSegmentCard(segName)} className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#7747EE] text-[8px] flex items-center justify-center text-[#ffffff]" disabled={isAnySubmitting}>✕</button>
+                    <div className="text-sm font-medium mb-2 ">{segName}</div>
+                    <div className="text-xs text-gray-400 mb-3 border-t border-[#E2E8F0]" />
+                    <div className="space-y-3">
+                      {availableRanges.map((r) => {
+                        const isChecked = (segmentRanges[segName] || []).includes(r);
+                        return (
+                          <label key={`${segName}-${r}`} className="flex items-start gap-3 text-sm cursor-pointer select-none">
+                            <input type="checkbox" checked={isChecked} onChange={() => !isAnySubmitting && toggleRangeForSegment(segName, r)} className="sr-only" disabled={isAnySubmitting} />
+                            <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (isChecked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+                              <svg className={`${isChecked ? "opacity-100" : "opacity-0"} w-4 h-4 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                            </span>
+                            <div className="text-xs text-gray-700 leading-5">From - {r.split(" - ")[0]} &nbsp; TO - &nbsp; {r.split(" - ")[1]}</div>
+                          </label>
+                        );
+                      })}
+                      {availableRanges.length === 0 && <div className="text-xs text-gray-400">No BIN ranges defined</div>}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Token area */}
+      <div className="mt-4 bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          <div className="p-3 flex flex-col self-stretch min-h-[160px]">
+            <label className="block text-sm text-gray-700 mb-2">Apple Tokens</label>
+            <textarea
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              onKeyDown={handleTokenKeyDown}
+              placeholder="Enter Apple Tokens (comma separated)"
+              className="w-full flex-1 resize-none border border-[#B0B2F7] rounded p-2 text-sm placeholder-gray-300 focus:outline-none focus:border-2 focus:border-[#7747EE]"
+              disabled={isAnySubmitting}
+            />
+            <button onClick={handleAddTokens} className="mt-3 px-8 h-9 bg-[#7747EE] text-white rounded-full text-sm self-start" type="button" disabled={isAnySubmitting}>ADD</button>
+          </div>
+          <div className="bg-white border border-[#E2E8F0] rounded p-3 self-stretch min-h-[120px]">
+            <div className="text-sm text-gray-700 mb-2">Added Tokens</div>
+            <div className="max-h-[160px] overflow-auto">
+              {tokens.length === 0 ? <div className="text-xs text-gray-400">No tokens added</div> : (
+                <ul className="space-y-2">
+                  {tokens.map((t) => (
+                    <li key={t.value} className="flex items-center justify-between">
+                      <label className="relative flex items-center gap-3 py-1 cursor-pointer select-none text-sm">
+                        <input type="checkbox" checked={t.checked} onChange={() => !isAnySubmitting && toggleTokenChecked(t.value)} className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 w-4 h-4" disabled={isAnySubmitting} />
+                        <span className={"w-4 h-4 rounded border-2 flex items-center justify-center transition-all " + (t.checked ? "border-[#7747EE] bg-[#7747EE]" : "border-[#7747EE] bg-white")}>
+                          <svg className={`${t.checked ? "opacity-100" : "opacity-0"} w-3 h-3 text-white transition-opacity`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                        </span>
+                        <span className="text-xs text-gray-700 pl-1">{t.value}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Buttons */}
+      <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+        <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" disabled={isAnySubmitting}>
+          <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Previous</span>
+        </button>
+        <div className="flex gap-3">
+          {isEditMode && (
+            <button onClick={() => handleSubmit('update')} disabled={isAnySubmitting} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors">
+              {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {isUpdateSubmitting ? "Updating..." : "Update"}
+            </button>
+          )}
+          <button onClick={() => handleSubmit('next')} disabled={isLoadingData || isAnySubmitting} className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70">
+            {isLoadingData ? <Loader2 className="w-4 h-4 animate-spin" /> : (isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null)}
+            {isLoadingData ? "Loading..." : (isNextSubmitting ? "Saving..." : "Next →")}
+          </button>
+        </div>
+      </div>
+      
+      {isAnySubmitting && (
+          <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
+          </div>
+      )}
+    </div>
+  );
+};
+
+export default BINConfig;

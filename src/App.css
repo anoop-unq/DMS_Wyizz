@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+
+  --text-standard: 14px;
+
+  --text-color-primary: #fdca79;
+
+  --text-color-primary-white: #ffffff;
+
+  --background-color-primary: #00201e;
+
+  --background-color-primary-light: #0c2a27;
+
+  --background-primary-golden: linear-gradient(to right, #f3c27f, #977140);
+
+  --text-color-btn-primary: linear-gradient(to right, #f3c27f 0%, #977140 100%);
+
+  --border-color-primary: #2c3e3b;
+}
+
+.btn-primary-violet {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 700;
+
+  font-style: bold;
+
+  font-size: 14px;
+
+  line-height: 100%;
+
+  letter-spacing: 0%;
+
+  color: #ffffff;
+
+  background-color: #7747ee;
+
+  border-radius: 8px;
+
+  padding: 10px 20px;
+
+  transition: all 0.2s ease-in-out;
+}
+
+/* .btn-primary-violet:hover {
+
+  background-color: #6938e6; 
+
+  transform: translateY(-1px);
+
+} */
+
+.head {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 18px;
+
+  line-height: 100%;
+
+  letter-spacing: 0%;
+
+  color: #000000;
+
+  transform: rotate(0deg);
+
+  opacity: 1;
+}
+
+.inside-head {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 16px;
+
+  line-height: 100%;
+
+  letter-spacing: 0%;
+
+  color: #000000;
+
+  transform: rotate(0deg);
+
+  opacity: 1;
+}
+.para {
+  color: #64748b;
+
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 14px;
+
+  line-height: 100%;
+
+  letter-spacing: 0%;
+}
+
+.card-head {
+  font-family: Inter;
+
+  font-weight: 400;
+
+  font-style: Regular;
+
+  font-size: 14px;
+
+  line-height: 100%;
+
+  letter-spacing: 0%;
+
+  color: #8b5563;
+}
+
+.terminalHead {
+  font-family: Inter;
+
+  font-weight: 400;
+
+  font-style: Regular;
+
+  font-size: 12px;
+
+  line-height: 100%;
+
+  letter-spacing: 0%;
+
+  color: #000000;
+}
+
+.terminalPara {
+  color: #64748b;
+
+  font-family: Inter;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 10px;
+
+  /* margin-top: 1px; */
+}
+.negative {
+  margin-top: -40px;
+}
+
+.card-para {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 14px;
+
+  line-height: 100%;
+
+  letter-spacing: 0;
+
+  color: #8b5563;
+
+  padding: 0.25rem 0.5rem;
+
+  border-radius: 0.25rem;
+}
+
+.card-inside-head {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 500;
+
+  font-style: normal;
+
+  font-size: 16px;
+
+  line-height: 100%;
+
+  letter-spacing: 0;
+
+  color: #000000;
+}
+/* Hide scrollbar for Chrome, Safari, Edge */
+.hide-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Hide scrollbar for Firefox */
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+
+.my-text {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 12px;
+
+  line-height: 100%;
+
+  letter-spacing: -3%;
+
+  color: #000000;
+}
+
+.card-inside-para {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 500;
+
+  font-style: normal;
+
+  font-size: 14px;
+
+  line-height: 100%;
+
+  letter-spacing: 0;
+
+  color: #717880;
+}
+
+.card-inside-range {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 14px; /* default for mobile */
+
+  line-height: 100%;
+
+  letter-spacing: 0;
+
+  color: #8b5563;
+}
+
+.btn-purple {
+  background-color: #7747ee;
+
+  color: #ffffff;
+
+  font-family: "Inter", sans-serif;
+
+  font-weight: 700;
+
+  font-size: 16px;
+
+  line-height: 100%;
+
+  border: none;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+/* .contain{
+
+
+
+} */
+
+.logo-text {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 700;
+
+  font-style: normal;
+
+  font-size: 24px;
+
+  line-height: 100%;
+
+  width: 100px;
+
+  height: 100px;
+
+  letter-spacing: 0;
+
+  color: #002050;
+}
+
+.inter-20 {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-size: 14px;
+
+  line-height: 20px; /* 100% */
+
+  letter-spacing: 0px; /* 0% */
+}
+
+/* Reduce text size for laptops and large desktops */
+
+@media (min-width: 1024px) {
+  .card-inside-range {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .card-inside-range {
+    font-size: 11.5px;
+  }
+}
+
+.btn-primary-indigo {
+  background-color: #6366f1;
+
+  color: #ffffff;
+
+  font-family: "Inter", sans-serif;
+
+  font-weight: light;
+
+  font-style: normal;
+
+  font-size: 18px;
+
+  line-height: 100%;
+
+  letter-spacing: -3%;
+
+  border-radius: 12px;
+
+  padding: 10px 10px 10px 16px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  opacity: 1;
+
+  cursor: pointer;
+
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.campaign-inside-head {
+  font-family: "Inter", sans-serif;
+
+  font-weight: 650;
+
+  font-style: normal;
+
+  font-size: 12px;
+
+  line-height: 100%;
+
+  letter-spacing: 0;
+
+  color: #000000;
+}
