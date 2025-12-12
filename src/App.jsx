@@ -1,29 +1,39 @@
+// App.jsx - Updated
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from 'react-router-dom';
+import { useAuthContext } from './context/AuthContext'; 
+
+// --- Components ---
 import Navbar from './Components/Navbar';
 import Sidebar from './Components/Sidebar';
+import ProtectedRoute from './Components/ProtectedRoute';
 
 // --- Pages ---
-
-import BinManagement from './Pages/BinManagement';
-import MerchantManagement from './Pages/MerchantManagement';
-import Approver from './Pages/Approver';
-import Campaign from './Pages/Campaign';
-import UserManagement from './Pages/UserManagement';
-import BankManagement from './Pages/bankManagement';
 import DmsLogin from './DmsLogin/DmsLogin';
-import "./App.css";
 import Home from './Pages/Home';
 import Dashboard from './Pages/Dashboard';
+import BinManagement from './Segments/BinManagement';
+import MerchantManagement from './Pages/MerchantManagement';
+import Approver from './Pages/Approver'; 
+import Campaign from './Pages/Campaign'; 
+import UserManagement from './Pages/UserManagement';
+import BankManagement from './Pages/bankManagement';
 
-// --- Layout Component ---
+import "./App.css";
+import ViewCampaign from './ViewCampaign/ViewCampagin';
+
+// --- Layout ---
 const MainLayout = ({ sidebarToggle, setSidebarToggle, isMobile }) => {
+  const { userType } = useAuthContext(); // Get userType from context
+  
   return (
     <div className="flex h-screen">
+      {/* Pass userType to Sidebar */}
       <Sidebar 
         sidebarToggle={sidebarToggle} 
-        setSidebarToggle={setSidebarToggle}
+        setSidebarToggle={setSidebarToggle} 
         isMobile={isMobile}
+        userType={userType} // ✅ Pass userType here
       />
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar setSidebarToggle={setSidebarToggle} isMobile={isMobile} />
@@ -35,11 +45,13 @@ const MainLayout = ({ sidebarToggle, setSidebarToggle, isMobile }) => {
   );
 };
 
-// --- Protected Route Component ---
+// --- Private Routes Wrapper ---
 const PrivateRoutes = () => {
-  // Check specifically for "token" as saved in useAuth.jsx
-  const isAuthenticated = localStorage.getItem("token"); 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+  const { token, loading } = useAuthContext();
+  
+  if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
+
+  return token ? <Outlet /> : <Navigate to="/login" />;
 };
 
 function App() {
@@ -47,9 +59,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const checkScreenSize = () => { setIsMobile(window.innerWidth < 768); };
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
@@ -58,30 +68,46 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* --- Public Route --- */}
         <Route path="/login" element={<DmsLogin />} />
 
-        {/* --- Protected Routes --- */}
         <Route element={<PrivateRoutes />}>
           <Route element={<MainLayout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle} isMobile={isMobile} />}>
             
-            {/* 1. Home Page (Root) */}
             <Route path="/" element={<Home />} />
-
-            {/* 2. Dashboard Page */}
             <Route path="/dashboard" element={<Dashboard />} />
-            
-            {/* Other Management Pages */}
-                        <Route path="/campaign" element={<Campaign />} />
-            <Route path="/bin-management" element={<BinManagement />} />
-            <Route path="/merchant-management" element={<MerchantManagement />} />
-            <Route path="/bank-management" element={<BankManagement />} />
 
-            <Route path="/user-management" element={<UserManagement />} />
-            <Route path="/approval-central" element={<Approver />} />
+            {/* GLOBAL VIEW */}
+            <Route element={<ProtectedRoute allowedRoles={['discountmaker','discountchecker','admin','bank']} />}>
+               <Route path="/view-campaign-details/:id" element={<ViewCampaign />} />
+            </Route>
+
+            {/* MAKER ROUTES */}
+            <Route element={<ProtectedRoute allowedRoles={['discountmaker','discountchecker','admin','bank']} />}>
+              <Route path="/campaign" element={<Campaign />} />
+            </Route>
+
+
+
+            {/* CHECKER ROUTES */}
+            <Route element={<ProtectedRoute allowedRoles={['discountchecker', 'admin']} />}>
+              <Route path="/approval-central" element={<Approver />} />
+            </Route>
+
+            {/* ADMIN / BANK ROUTES */}
+            <Route element={<ProtectedRoute allowedRoles={['bank', 'admin']} />}>
+               <Route path="/bank-management" element={<BankManagement />} />
+                             <Route path="/bin-management" element={<BinManagement />} />
+                                            <Route path="/merchant-management" element={<MerchantManagement />} />
+               <Route path="/user-management" element={<UserManagement />} />
+            </Route>
+
+     
             
           </Route>
         </Route>
+
+        <Route path="*" element={<Navigate to="/" />} />
+
       </Routes>
     </Router>
   );

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { metadataApi, campaignDiscountApi, campaignApi } from "../utils/metadataApi"; 
@@ -12,36 +11,30 @@ const BINConfig = ({
   isEditMode,
   onRefresh
 }) => {
-  // --- State: Data from API ---
+  // ... [Keep all your existing state and logic exactly the same] ...
   const [availableSegments, setAvailableSegments] = useState([]);
   const [loadingSegments, setLoadingSegments] = useState(false);
-
-  // --- State: UI Controls ---
   const [segmentsOpen, setSegmentsOpen] = useState(false);
-  
   const [selectedSegments, setSelectedSegments] = useState([]); 
   const [selectedSegmentIds, setSelectedSegmentIds] = useState([]); 
   const [segmentRanges, setSegmentRanges] = useState({});
   const [tokens, setTokens] = useState([]); 
-  
   const [tokenInput, setTokenInput] = useState("");
-
   const [isLoadingData, setIsLoadingData] = useState(false);     
   const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false); 
   const [isNextSubmitting, setIsNextSubmitting] = useState(false);     
-  
   const isAnySubmitting = isUpdateSubmitting || isNextSubmitting; 
-  
   const segRef = useRef(null);
-    
-    // --- Helper to format API bin object ---
-    const formatBinRange = (binObj) => {
-        if (!binObj) return "";
-        return `${binObj.start_bin} - ${binObj.end_bin}`;
-    };
 
-    // --- Helper to map API data (READING) to local state ---
-    const mapApiDataToState = (discountData) => {
+  // ... [Keep helper functions formatBinRange, mapApiDataToState, useEffects, etc.] ...
+
+  const formatBinRange = (binObj) => {
+      if (!binObj) return "";
+      return `${binObj.start_bin} - ${binObj.end_bin}`;
+  };
+
+  const mapApiDataToState = (discountData) => {
+      // ... [Keep existing implementation] ...
         const segmentsApi = discountData.discount_segments || discountData.segments || [];
         
         const newSelectedSegments = [];
@@ -105,9 +98,9 @@ const BINConfig = ({
             tokens: newTokens,
             finalSegmentsData: generatePayload(newSelectedSegments, newSegmentRanges, newTokens)
         });
-    };
+  };
 
-  // --- 1. Fetch Segments ---
+  // ... [Keep useEffects 1, 2, 3 and close dropdown logic] ...
   useEffect(() => {
     const fetchSegments = async () => {
       setLoadingSegments(true);
@@ -124,7 +117,6 @@ const BINConfig = ({
     fetchSegments();
   }, []);
 
-    // --- 2. Load Existing Data using campaignId ---
     useEffect(() => {
         if (campaignId && availableSegments.length > 0) { 
             const fetchStepData = async () => {
@@ -132,10 +124,7 @@ const BINConfig = ({
                 try {
                     const res = await campaignDiscountApi.getById(campaignId);
                     const d = res.data?.discount || {};
-                    
-                    const hasSegments = (d.discount_segments && d.discount_segments.length > 0) || 
-                                        (d.segments && d.segments.length > 0);
-
+                    const hasSegments = (d.discount_segments && d.discount_segments.length > 0) || (d.segments && d.segments.length > 0);
                     if (d && hasSegments) {
                         mapApiDataToState(d);
                     }
@@ -149,7 +138,6 @@ const BINConfig = ({
         }
     }, [campaignId, availableSegments.length]);
 
-  // --- 3. Initialize from Props (Backup) ---
   useEffect(() => {
     if (data && !isLoadingData && selectedSegments.length === 0) { 
       const cleanData = {
@@ -158,12 +146,10 @@ const BINConfig = ({
         segmentRanges: data.segmentRanges && typeof data.segmentRanges === 'object' ? data.segmentRanges : {},
         tokens: Array.isArray(data.tokens) ? data.tokens : [],
       };
-      
       if (cleanData.selectedSegments.length > 0) {
           setSelectedSegments(cleanData.selectedSegments);
           setSelectedSegmentIds(cleanData.selectedSegmentIds);
           setSegmentRanges(cleanData.segmentRanges);
-          
           if (cleanData.tokens && Array.isArray(cleanData.tokens)) {
             setTokens(cleanData.tokens.map((t) => typeof t === "string" ? { value: t, checked: true } : { ...t, checked: !!t.checked }));
           }
@@ -171,7 +157,6 @@ const BINConfig = ({
     }
   }, [data, isLoadingData]);
 
-  // Close dropdown logic
   useEffect(() => {
     const handleClick = (e) => {
       if (segRef.current && !segRef.current.contains(e.target)) setSegmentsOpen(false);
@@ -180,18 +165,19 @@ const BINConfig = ({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // ✅ GENERATE PAYLOAD
-  const generatePayload = (
+
+const generatePayload = (
       currSegments = selectedSegments, 
       currRanges = segmentRanges, 
       currTokens = tokens
   ) => {
-      if (currSegments.length === 0) return null;
+      if (currSegments.length === 0) return [];
 
       const payload = currSegments.map(segName => {
           const originalSeg = availableSegments.find(s => (s.segment_name || s.name) === segName);
           const selectedRanges = currRanges[segName] || [];
           
+          // Generate the bins list
           const binRanges = selectedRanges
             .filter(range => range !== "N/A - N/A")
             .map(range => {
@@ -202,11 +188,7 @@ const BINConfig = ({
               };
             });
 
-          const metadataHasRanges = originalSeg?.bin_ranges && originalSeg.bin_ranges.length > 0;
-          if (metadataHasRanges && binRanges.length === 0) {
-              return null; 
-          }
-
+          // Generate the tokens list
           const hasSelectedTokens = currTokens.some(t => t.checked);
           const appleTokens = hasSelectedTokens ? currTokens
             .filter(t => t.checked)
@@ -214,15 +196,19 @@ const BINConfig = ({
               token_value: t.value
             })) : [];
 
+          const isAllBins = binRanges.length === 0;
+          const isAllTokens = !hasSelectedTokens;
+
+          // --- UPDATED KEYS BASED ON IMAGE ---
           const payloadObj = {
             segment_id: originalSeg?.id,
-            all_bins: false, 
-            all_tokens: !hasSelectedTokens,    
-            apple_tokens: appleTokens 
+            all_bins: isAllBins, 
+            all_tokens: isAllTokens,    
+            discount_apple_tokens: appleTokens // Changed from 'apple_tokens'
           };
 
-          if (binRanges.length > 0) {
-            payloadObj.bin_ranges = binRanges;
+          if (!isAllBins) {
+            payloadObj.discount_bins = binRanges; // Changed from 'bin_ranges'
           }
 
           return payloadObj;
@@ -230,6 +216,7 @@ const BINConfig = ({
 
       return payload;
   };
+
 
   const updateParent = (updates) => {
     const mergedState = {
@@ -245,11 +232,9 @@ const BINConfig = ({
                 updates.tokens !== undefined ? updates.tokens : tokens
               )
     };
-    
     onUpdate(mergedState);
   };
 
-  // --- Handlers ---
   const handleSubmit = async (action) => { 
     if (selectedSegments.length === 0) {
       alert("Please select at least one segment.");
@@ -260,14 +245,11 @@ const BINConfig = ({
     else setIsNextSubmitting(true);
    
     try {
+      // 1. Generate the array with the new keys (discount_bins, etc.)
       const formattedSegments = generatePayload(selectedSegments, segmentRanges, tokens);
       
-      // Always update parent state so Step 6 has the latest data
       updateParent({ finalSegmentsData: formattedSegments });
 
-      // ✅ DECISION LOGIC:
-      // 1. Wizard Mode (!isEditMode): Always Save.
-      // 2. Edit Mode (isEditMode): Only Save if action is 'update'.
       const shouldCallApi = !isEditMode || action === 'update';
 
       if (shouldCallApi) {
@@ -275,9 +257,10 @@ const BINConfig = ({
               throw new Error("Missing Campaign ID. Cannot update.");
           }
 
+          // 2. Wrap it in the structure shown in the image (discount_segments)
           const apiBody = {
               discount: {
-                  segments: formattedSegments || [] 
+                  discount_segments: formattedSegments || [] // Changed from 'segments' to 'discount_segments'
               }
           };
 
@@ -288,11 +271,8 @@ const BINConfig = ({
               if (onRefresh) await onRefresh();
               console.log("✅ Step 2 Updated.");
           }
-      } else {
-          console.log("ℹ️ Edit Mode Next: Skipping API call, local state updated.");
       }
       
-      // Navigation
       if (action === 'next') {
         onNext(); 
       }
@@ -307,8 +287,8 @@ const BINConfig = ({
     }
   };
 
-  // --- Toggle Functions ---
   const toggleSegment = (segment) => {
+    // ... [Keep existing toggleSegment logic] ...
     const name = segment.segment_name || segment.name;
     const segmentId = segment.id;
     const isSelected = selectedSegments.includes(name);
@@ -319,12 +299,10 @@ const BINConfig = ({
     let newTokens = [...tokens]; 
 
     if (isSelected) {
-      // --- REMOVE LOGIC ---
       newSelectedNames = selectedSegments.filter((s) => s !== name);
       newSelectedIds = selectedSegmentIds.filter((sid) => sid !== segmentId);
       delete newRanges[name];
 
-      // Remove associated tokens safely
       const segTokens = segment.apple_tokens || segment.discount_apple_tokens || [];
       if (segTokens.length > 0) {
           const otherTokensSet = new Set();
@@ -339,7 +317,6 @@ const BINConfig = ({
           newTokens = tokens.filter(t => {
               const tokenValue = t.value;
               const isTokenInRemovedSeg = segTokens.some(st => (st.token_value || st) === tokenValue);
-              
               if (!isTokenInRemovedSeg) return true; 
               if (otherTokensSet.has(tokenValue)) return true;
               return false; 
@@ -347,7 +324,6 @@ const BINConfig = ({
       }
 
     } else {
-      // --- ADD LOGIC ---
       newSelectedNames = [...selectedSegments, name];
       newSelectedIds = [...selectedSegmentIds, segmentId];
 
@@ -391,18 +367,8 @@ const BINConfig = ({
     } else {
       updated = [...currentRanges, rangeString];
     }
-
-    if (updated.length === 0) {
-        const segObj = availableSegments.find(s => (s.segment_name || s.name) === segmentName);
-        if (segObj) {
-            toggleSegment(segObj); 
-        }
-        return; 
-    }
-
     const newSegmentRanges = { ...segmentRanges, [segmentName]: updated };
     setSegmentRanges(newSegmentRanges);
-    
     updateParent({ segmentRanges: newSegmentRanges });
   };
 
@@ -411,8 +377,10 @@ const BINConfig = ({
     if (segObj) toggleSegment(segObj);
   };
 
+  // ✅ REVERTED TO FULL LIST (CSS will handle the cutting off)
   const segmentsDisplay = selectedSegments.length ? selectedSegments.join(", ") : "Select segment";
 
+  // ... [Keep the rest of helper functions: parseInputToValues, handleAddTokens, etc.] ...
   const parseInputToValues = (input) => {
     return input
       .split(/\r?\n|,|;/)
@@ -484,11 +452,18 @@ const BINConfig = ({
             <button
               type="button"
               onClick={() => setSegmentsOpen(!segmentsOpen)}
-              className="flex-1 flex items-center justify-between border border-[#B0B2F7] rounded p-2 bg-white text-sm h-10"
+              // ✅ MODIFIED CLASSES: Added 'overflow-hidden' to the button to contain the span
+              className="flex-1 flex items-center justify-between border border-[#B0B2F7] rounded p-2 bg-white text-sm h-10 overflow-hidden"
               disabled={isAnySubmitting}
             >
-              <span className="text-sm text-gray-700 truncate">{segmentsDisplay}</span>
-              <svg className="w-4 h-4 text-gray-400 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+              {/* ✅ MODIFIED SPAN: 'truncate' handles the ... when it touches the border */}
+              <span 
+                className="text-sm text-gray-700 truncate block w-full text-left"
+                title={segmentsDisplay} // Shows full list on hover
+              >
+                {segmentsDisplay}
+              </span>
+              <svg className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </button>
             <button
               type="button"
@@ -501,7 +476,7 @@ const BINConfig = ({
           </div>
 
           {segmentsOpen && (
-            <div className="absolute z-30 mt-2 w-full bg-white border border-[#E2E8F0] rounded shadow-sm p-3 max-h-48 overflow-auto">
+            <div className="absolute z-30 mt-2 w-full bg-white border border-[#E2E8F0] rounded shadow-sm p-3 max-h-48 overflow-auto hide-scroll">
               {loadingSegments ? (
                 <div className="text-sm text-gray-500 text-center py-2">Loading segments...</div>
               ) : availableSegments.length === 0 ? (
@@ -526,10 +501,10 @@ const BINConfig = ({
         </div>
       </div>
 
-      {/* BIN Ranges Cards area */}
+      {/* ... [Rest of the JSX for Cards, Tokens, Footer remains exactly the same] ... */}
       <div className="mt-6 bg-[#FBFCFD] border border-gray-100 rounded p-4">
         <div className="mb-4 inter-20">BIN Ranges:</div>
-        <div className="overflow-auto" style={{ maxHeight: "150px" }}>
+        <div className="overflow-auto hide-scroll" style={{ maxHeight: "150px" }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {selectedSegments.length === 0 ? (
               <div className="col-span-1 md:col-span-3 text-sm text-gray-500">No segments selected</div>
@@ -565,7 +540,6 @@ const BINConfig = ({
         </div>
       </div>
 
-      {/* Token area */}
       <div className="mt-4 bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           <div className="p-3 flex flex-col self-stretch min-h-[160px]">
@@ -575,14 +549,14 @@ const BINConfig = ({
               onChange={(e) => setTokenInput(e.target.value)}
               onKeyDown={handleTokenKeyDown}
               placeholder="Enter Apple Tokens (comma separated)"
-              className="w-full flex-1 resize-none border border-[#B0B2F7] rounded p-2 text-sm placeholder-gray-300 focus:outline-none focus:border-2 focus:border-[#7747EE]"
+              className="w-full flex-1 bg-[#ffffff] resize-none border border-[#B0B2F7] rounded p-2 text-sm placeholder-gray-300 focus:outline-none focus:border-2 focus:border-[#7747EE]"
               disabled={isAnySubmitting}
             />
             <button onClick={handleAddTokens} className="mt-3 px-8 h-9 bg-[#7747EE] text-white rounded-full text-sm self-start" type="button" disabled={isAnySubmitting}>ADD</button>
           </div>
           <div className="bg-white border border-[#E2E8F0] rounded p-3 self-stretch min-h-[120px]">
             <div className="text-sm text-gray-700 mb-2">Added Tokens</div>
-            <div className="max-h-[160px] overflow-auto">
+            <div className="max-h-[160px] hide-scroll overflow-auto">
               {tokens.length === 0 ? <div className="text-xs text-gray-400">No tokens added</div> : (
                 <ul className="space-y-2">
                   {tokens.map((t) => (
@@ -603,7 +577,6 @@ const BINConfig = ({
         </div>
       </div>
 
-      {/* Footer Buttons */}
       <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
         <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" disabled={isAnySubmitting}>
           <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Previous</span>

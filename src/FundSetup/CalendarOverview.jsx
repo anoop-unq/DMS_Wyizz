@@ -64,7 +64,7 @@ const CalendarOverview = ({
     return (
       <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-100">
         <Calendar className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-        <p className="text-gray-500 font-medium">Please set campaign dates in Step 1 first</p>
+        <p className="text-gray-500 font-medium">Please set campaign dates in Campaign </p>
       </div>
     );
   }

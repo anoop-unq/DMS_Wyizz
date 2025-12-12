@@ -415,7 +415,9 @@ const FundSetup = ({
       </div>
 
       {/* Date Controls */}
-      <div className="flex flex-col md:flex-row gap-6 mb-8 items-end bg-[#F8F9FC] p-4 rounded-xl border border-gray-100">
+
+      {mainStartDate && mainEndDate &&(
+       <div className="flex flex-col md:flex-row gap-6 mb-8 items-end bg-[#F8F9FC] p-4 rounded-xl border border-gray-100">
         <div className="flex-1 w-full">
           <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
             Campaign Start Date
@@ -450,6 +452,11 @@ const FundSetup = ({
           </button>
         </div>
       </div>
+      )}
+    
+       
+    
+
 
       {/* Active Restrictions */}
       {(patternConfigs.length > 0 || specificDateConfigs.length > 0) && (
@@ -527,34 +534,55 @@ const FundSetup = ({
       )}
 
       {/* Navigation */}
-      <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
-        <button
-          onClick={onPrevious}
-          className="px-6 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Previous
-        </button>
-        
-        <div className="flex gap-3">
-          {isEditMode && (
-            <button
-              onClick={() => handleSubmit('update')}
-              disabled={!mainStartDate || !mainEndDate || isLoading}
-              className="px-8 py-2.5 bg-white border border-[#7747EE] text-[#7747EE] rounded-lg text-sm font-medium hover:bg-[#F4F2FF] shadow-sm disabled:opacity-50 flex items-center gap-1"
-            >
-              {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update'}
-            </button>
-          )}
+    <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+  
+  {/* PREVIOUS BUTTON */}
+  <button
+    onClick={onPrevious}
+    className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50"
+  >
+    <span className="flex justify-center items-center gap-2">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#000000"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+      Previous
+    </span>
+  </button>
 
-          <button
-            onClick={() => handleSubmit('next')}
-            disabled={!mainStartDate || !mainEndDate || isLoading}
-            className="px-8 py-2.5 bg-[#7747EE] text-white rounded-lg text-sm font-medium hover:bg-[#6338d1] shadow-sm disabled:opacity-50"
-          >
-             {isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Next →'}
-          </button>
-        </div>
-      </div>
+  <div className="flex gap-3">
+    
+    {/* UPDATE BUTTON (Edit Mode Only) */}
+    {isEditMode && (
+      <button
+        onClick={() => handleSubmit('update')}
+        disabled={!mainStartDate || !mainEndDate || isLoading}
+        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors"
+      >
+        {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+        {isUpdateSubmitting ? "Updating..." : "Update"}
+      </button>
+    )}
+
+    {/* NEXT BUTTON */}
+    <button
+      onClick={() => handleSubmit('next')}
+      disabled={!mainStartDate || !mainEndDate || isLoading}
+      className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70"
+    >
+      {isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+      {isNextSubmitting ? "Saving..." : "Next →"}
+    </button>
+  </div>
+</div>
     </div>
   );
 };
