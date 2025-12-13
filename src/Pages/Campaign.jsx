@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Plus,
@@ -33,7 +34,7 @@ function CampaignCard({ c, onEdit, onDelete, onView, userType }) { // ✅ Add us
 
   return (
     <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-[0_6px_18px_rgba(13,38,59,0.04)] w-full ">
-      {/* ... (Header Section remains same) ... */}
+
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-md flex items-center justify-center border border-gray-100 bg-green-50 text-green-700">
@@ -43,14 +44,14 @@ function CampaignCard({ c, onEdit, onDelete, onView, userType }) { // ✅ Add us
             <h3 className="campaign-inside-head text-[15px] leading-tight">
               {c.title}
             </h3>
-            <div className="text-[10px] uppercase tracking-wide text-gray-700 mt-[2px]">
-              {c.type}
-            </div>
+       <div className="text-[10px] tracking-wide text-gray-700 mt-[2px]">
+  {c.type?.charAt(0).toUpperCase() + c.type?.slice(1).toLowerCase()}
+</div>
           </div>
         </div>
         <div>
           <span
-            className={`inline-block px-3 py-[3px] text-[11px] font-medium rounded-full ${
+            className={`inline-block px-5 py-[3px] text-[11px] font-medium rounded-full ${
               c.status === "Active"
                 ? "bg-green-100 text-green-800"
                 : "bg-gray-100 text-gray-600"
@@ -69,71 +70,101 @@ function CampaignCard({ c, onEdit, onDelete, onView, userType }) { // ✅ Add us
       </p>
 
       {/* ... (Middle Details Section remains same) ... */}
-      <div className="mt-3 grid grid-cols-2 gap-y-2 text-[13px] text-[#7C3F44]">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Percent size={13} className="text-[#7C3F44]" />
-            <div>
-              Value:{" "}
-              <span className="font-medium text-[#7C3F44]">{c.value}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Box size={13} className="text-[#7C3F44]" />
-            <div className="font-medium">{c.meta.merchant}</div>
-          </div>
-        </div>
-        <div className="space-y-2 text-right">
-          <div className="flex items-center justify-end gap-2">
-            <Calendar size={13} className="text-[#7C3F44]" />
-            <div className="font-medium">{c.meta.ends}</div>
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            {c.meta.card && (
-              <>
-                <img
-                  src={assets.ColorCreditCard}
-                  className="w-3.5 h-3.5 object-contain"
-                  alt="card"
-                />
-                <div className="font-medium">
-                  {c.meta.card && c.meta.card.length > 10
-                    ? `${c.meta.card.substring(0, 15)}...`
-                    : c.meta.card}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+    <div className="mt-3 grid grid-cols-2 gap-y-2 text-[13px] text-[#7C3F44]">
+  {/* Left Column */}
+  <div className="space-y-2">
+    {/* Value Section */}
+    <div className="flex items-center gap-2">
+      <img 
+        src={assets.TargetValue} 
+        className="w-3.5 h-3.5 object-contain" 
+        alt="Target Value" 
+      />
+      <div>
+        Value:{" "}
+        <span className="font-medium text-[#7C3F44]">{c.value}</span>
       </div>
+    </div>
 
+    {/* Merchant/Shop Section */}
+    <div className="flex items-center gap-2">
+      <img 
+        src={assets.Shop} 
+        className="w-3.5 h-3.5 object-contain" 
+        alt="Shop" 
+      />
+      <div className="font-medium">{c.meta.merchant}</div>
+    </div>
+  </div>
+
+  {/* Right Column */}
+  <div className="space-y-2 text-right">
+    {/* Date Section */}
+    <div className="flex items-center justify-end gap-2">
+      <img 
+        src={assets.sideCalendar} 
+        className="w-3.5 h-3.5 object-contain" 
+        alt="Calendar" 
+      />
+      <div className="font-medium">{c.meta.ends}</div>
+    </div>
+
+    {/* Card Section */}
+    <div className="flex items-center justify-end gap-2">
+      {c.meta.card && (
+        <>
+          <img
+            src={assets.ColorCreditCard}
+            className="w-3.5 h-3.5 object-contain"
+            alt="card"
+          />
+          <div className="font-medium">
+            {c.meta.card && c.meta.card.length > 10
+              ? `${c.meta.card.substring(0, 15)}...`
+              : c.meta.card}
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+</div>
+
+     {/* Budget Used Header */}
       <div className="mt-3 flex items-center justify-between">
-        <div className="text-[11px] text-gray-500">Budget Used</div>
-        <div className="text-[13px] font-medium text-gray-600">
-          {c.budgetDisplay}
+        <div className="text-[11px] text-[#8B5563]">Budget Used</div>
+        <div className="text-[13px] font-medium text-[#8B5563]">
+          {/* Added $ manually since the budgetDisplay string in your snippet didn't have it */}
+          ${c.budgetUsed.toLocaleString()} / ${c.totalBudget.toLocaleString()}
         </div>
       </div>
 
+      {/* Progress Bar & Footer */}
       <div className="mt-1">
-        <div className="w-full h-[6px] bg-gray-100 rounded-full overflow-hidden ">
+        <div className="w-full h-[6px] bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full"
             style={{
-              width: `${percentUsed}%`,
+              width: `${c.totalBudget > 0 ? (c.budgetUsed / c.totalBudget) * 100 : 0}%`,
               background: "linear-gradient(90deg,#8b5cf6,#c084fc)",
             }}
           />
         </div>
         <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
-          <div>{percentUsed}% Used</div>
-          <div>{(c.transactions || 0).toLocaleString()} transactions</div>
+          <div>
+            {c.totalBudget > 0 
+              ? Math.round((c.budgetUsed / c.totalBudget) * 100) 
+              : 0}% Used
+          </div>
+                <div>
+  {c.transactions.toLocaleString()} transaction{c.transactions <= 1 ? '' : 's'}
+</div>
         </div>
       </div>
 
-      <div className="mt-3 border-t border-gray-100" />
+
 
       {/* Footer Actions - Updated with userType check */}
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
+      <div className="mt-3 pt-3 border-t border-[#E5E7EB] flex items-center justify-end gap-2">
         
         {isDiscountChecker ? (
           // --- VIEW FOR CHECKER (Large Green Button Only) ---
@@ -314,7 +345,7 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }, [currentPage]);
 
-  // ... (handleFormClose, handlePageChange, handleEdit, handleDelete remain same) ...
+
   const handleFormClose = (needsRefresh = false) => {
     if (needsRefresh) {
       if (!editingCampaign) localStorage.removeItem(LOCAL_STORAGE_KEY);
@@ -333,7 +364,7 @@ export default function CampaignsPage() {
         showCancelButton: true,
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
-        confirmButtonText: "Discard & Close",
+        confirmButtonText: "Close",
         cancelButtonText: "Keep Editing",
       }).then(async (result) => {
         if (result.isConfirmed) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Trash2, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
 import { campaignDiscountApi, campaignApi } from "../utils/metadataApi";
+import StepHeader from "../StepReusable/Stepheader";
 
 const DiscountConfiguration = ({
   data,
@@ -307,18 +308,7 @@ const DiscountConfiguration = ({
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex gap-2 items-center">
-          <span
-            className="w-5 h-5 inline-flex items-center justify-center rounded-full"
-            style={{ background: "#EFEFFD", color: "#7747EE", fontSize: 12 }}
-          >
-            3
-          </span>
-          <h3 className="card-inside-head">Discount Configuration</h3>
-        </div>
-        <div className="text-xs text-gray-500">Step 3 of 6</div>
-      </div>
+            <StepHeader step={3} totalSteps={9} title="Discount Configuration" />
 
       {/* Main Content Area */}
       <div className="bg-[#F7F9FB] border border-gray-100 rounded p-4 mb-4">

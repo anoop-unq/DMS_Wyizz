@@ -209,6 +209,10 @@ export const campaignDiscountApi = {
   delete: (id) => {
     return api.delete(`/dmsapi/campaign-discounts/${id}`);
   },
+
+  approve: (id,data) => {
+    return api.post(`/dmsapi/campaign-discounts/${id}/approve`,data);
+  },
 };
 
 

@@ -3,6 +3,7 @@ import { Trash2, Plus, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
 import { campaignDiscountApi } from "../utils/metadataApi"; 
 import RichMarkdownEditor from "./RichMarkdownEditor";
+import StepHeader from "../StepReusable/Stepheader";
 
 const Docs = ({
   data,
@@ -14,7 +15,7 @@ const Docs = ({
   campaignId,
 }) => {
   // --- State Management ---
-  const [docs, setDocs] = useState([{ doc_name: "", doc_text: "" }]);
+  const [docs, setDocs] = useState([]); 
   const [fetchingDetails, setFetchingDetails] = useState(false);
   
   const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false);
@@ -24,21 +25,31 @@ const Docs = ({
   // --- 1. FETCH DATA (Edit Mode) ---
   useEffect(() => {
     const fetchDocsData = async () => {
+      // Helper: Generate safe unique IDs
+      const generateId = () => 
+        typeof crypto !== 'undefined' && crypto.randomUUID 
+          ? crypto.randomUUID() 
+          : Date.now().toString() + Math.random().toString(36).substring(2);
+
+      const addUniqueIds = (items) => items.map(item => ({
+        ...item,
+        uniqueId: item.id || generateId()
+      }));
+
       if (isEditMode && campaignId) {
         setFetchingDetails(true);
         try {
           const res = await campaignDiscountApi.getById(campaignId);
           const d = res.data?.discount || {};
-          
           const existingDocs = d.discount_docs || [];
           
           if (existingDocs.length > 0) {
-            setDocs(existingDocs);
-            onUpdate({ discount_docs: existingDocs });
+            const docsWithIds = addUniqueIds(existingDocs);
+            setDocs(docsWithIds);
+            onUpdate({ discount_docs: docsWithIds });
           } else {
-             setDocs([{ doc_name: "", doc_text: "" }]);
+            setDocs([{ doc_name: "", doc_text: "", uniqueId: generateId() }]);
           }
-
         } catch (error) {
           console.error("Error fetching docs:", error);
         } finally {
@@ -47,8 +58,18 @@ const Docs = ({
       } 
       else if (!isEditMode && data && data.discount_docs) {
         if (data.discount_docs.length > 0) {
-            setDocs(data.discount_docs);
+            const docsWithIds = data.discount_docs.map(d => ({
+                ...d,
+                uniqueId: d.uniqueId || generateId()
+            }));
+            setDocs(docsWithIds);
+        } else {
+            setDocs([{ doc_name: "", doc_text: "", uniqueId: generateId() }]);
         }
+      } else {
+         if(docs.length === 0) {
+             setDocs([{ doc_name: "", doc_text: "", uniqueId: generateId() }]);
+         }
       }
     };
 
@@ -64,114 +85,67 @@ const Docs = ({
   };
 
   const handleAddRow = () => {
-    const newRow = { doc_name: "", doc_text: "" };
+    const generateId = () => Date.now().toString() + Math.random().toString(36).substring(2);
+    const newRow = { doc_name: "", doc_text: "", uniqueId: generateId() };
     const updatedDocs = [...docs, newRow];
     setDocs(updatedDocs);
     onUpdate({ discount_docs: updatedDocs });
   };
 
   const handleDeleteRow = (index) => {
-    // Always show confirmation, even if only one row
     Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to remove this document?",
+      title: "Remove Document?",
+      text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#7747EE",
+      confirmButtonColor: "#EF4444", // Red for delete
       cancelButtonColor: "#6B7280",
-      confirmButtonText: "Yes, remove it!",
+      confirmButtonText: "Yes, Remove",
       cancelButtonText: "Cancel"
     }).then((result) => {
       if (result.isConfirmed) {
-        if (docs.length === 1) {
-          // If it's the last row, clear it instead of removing
-          const updatedDocs = [{ doc_name: "", doc_text: "" }];
-          setDocs(updatedDocs);
-          onUpdate({ discount_docs: updatedDocs });
-        } else {
-          // Remove the row
-          const updatedDocs = docs.filter((_, i) => i !== index);
-          setDocs(updatedDocs);
-          onUpdate({ discount_docs: updatedDocs });
-        }
+        const updatedDocs = docs.filter((_, i) => i !== index);
+        setDocs(updatedDocs);
+        onUpdate({ discount_docs: updatedDocs });
       }
     });
   };
 
   // --- 3. SUBMIT LOGIC ---
   const handleSubmit = async (action) => {
-    const validDocs = docs.filter(
-      (d) => d.doc_name?.trim() || d.doc_text?.trim()
-    );
+    const validDocs = docs
+        .filter((d) => d.doc_name?.trim() || d.doc_text?.trim())
+        .map(({ uniqueId, ...rest }) => rest);
 
-    if (action === "update") {
-      // UPDATE button logic
-      setIsUpdateSubmitting(true);
-      
-      const payload = {
-        discount: {
-          discount_docs: validDocs,
-        },
-      };
+    const payload = {
+      discount: {
+        discount_docs: validDocs,
+      },
+    };
 
-      try {
-        await campaignDiscountApi.update(campaignId, payload);
-        
-        Swal.fire({
-          icon: "success",
-          title: "Docs Updated",
-          text: "Documentation details saved successfully.",
-          confirmButtonColor: "#7747EE",
-          timer: 2000,
-        });
-        
-        if (onRefresh) await onRefresh();
-        
-      } catch (error) {
-        console.error("Error saving docs:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Save Failed",
-          text: error.message || "Could not save documentation details.",
-        });
-      } finally {
-        setIsUpdateSubmitting(false);
-      }
-      
-    } else if (action === "next") {
-      // NEXT button logic
-      setIsNextSubmitting(true);
-      
-      try {
-        // If we're in edit mode OR we have no campaignId, just navigate
-        if (isEditMode || !campaignId) {
-          onNext();
-        } else {
-          // In create mode with campaignId, call API then navigate
-          const payload = {
-            discount: {
-              discount_docs: validDocs,
-            },
-          };
-          
-          await campaignDiscountApi.update(campaignId, payload);
-          onNext();
+    if (action === "update") setIsUpdateSubmitting(true);
+    else setIsNextSubmitting(true);
+
+    try {
+        if (isEditMode || (campaignId && (action === "update" || action === "next"))) {
+             await campaignDiscountApi.update(campaignId, payload);
         }
         
-      } catch (error) {
+        if (action === "update") {
+            Swal.fire({ icon: "success", title: "Docs Updated", text: "Saved successfully.", confirmButtonColor: "#7747EE", timer: 1500 });
+            if (onRefresh) await onRefresh();
+        } else {
+            onNext();
+        }
+    } catch (error) {
         console.error("Error saving docs:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Save Failed",
-          text: error.message || "Could not save documentation details.",
-        });
-      } finally {
+        Swal.fire({ icon: "error", title: "Save Failed", text: error.message });
+    } finally {
+        setIsUpdateSubmitting(false);
         setIsNextSubmitting(false);
-      }
     }
   };
 
-  // --- 4. RENDER LOADING STATE ---
   if (fetchingDetails) {
     return (
       <div className="flex flex-col h-[400px] w-full bg-white rounded-xl shadow-sm border border-gray-200 items-center justify-center">
@@ -183,17 +157,9 @@ const Docs = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 pt-5 pr-5 pl-5 pb-5 shadow-sm relative">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6">
-        <div className="flex gap-2 items-center mb-2 sm:mb-0">
-          <span className="w-5 h-5 text-center bg-[#EFEFFD] text-[#7747EE] rounded-full text-xs flex items-center justify-center">
-            7
-          </span>
-          <h3 className="text-lg font-semibold text-gray-900">Campaign Documentation</h3>
-        </div>
-        <div className="text-xs text-gray-500">Step 7 of 9</div>
-      </div>
+      <StepHeader step={7} totalSteps={9} title="Campaign Documentation" />
 
-      <div className="bg-[#F7F9FB] border border-[#E2E8F0] p-4 rounded mb-6">
+      <div className="bg-[#F7F9FB] border border-[#E2E8F0] p-4 rounded mb-6 overflow-y-scroll hide-scroll" style={{maxHeight:"450px"}}>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
             <h4 className="text-sm font-medium text-gray-700">Documents</h4>
             <button
@@ -205,12 +171,16 @@ const Docs = ({
             </button>
         </div>
 
-        <div className="space-y-6"> 
+        <div className="space-y-4"> 
           {docs.map((doc, index) => (
-            <div key={index} className="flex flex-col md:flex-row md:gap-4 items-start border-b border-gray-200 pb-6 last:border-0 last:pb-0">
+            // ✅ KEY FIX: Using doc.uniqueId prevents deletion bugs
+            <div 
+                key={doc.uniqueId} 
+                className="flex flex-col md:flex-row gap-4 items-start border-b border-gray-200 pb-6 mb-6 last:border-0 last:pb-0 last:mb-0"
+            >
               
-              {/* Left Side: Doc Name */}
-              <div className="w-full md:w-1/4 pt-1 mb-4 md:mb-0">
+              {/* 1. Left Side: Document Name */}
+              <div className="w-full md:w-1/4 pt-1">
                 <label className="block text-xs font-medium text-gray-500 mb-1">
                     Document Name {index + 1}
                 </label>
@@ -222,17 +192,9 @@ const Docs = ({
                   disabled={isAnySubmitting}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-[#7747EE] focus:border-[#7747EE] outline-none bg-white"
                 />
-                
-                {/* Delete Button - Always enabled */}
-                <button
-                    onClick={() => handleDeleteRow(index)}
-                    className="mt-4 flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
-                >
-                    <Trash2 size={14} /> Remove Doc
-                </button>
               </div>
 
-              {/* Right Side: Rich Markdown Editor */}
+              {/* 2. Middle: Rich Markdown Editor */}
               <div className="w-full md:flex-1">
                 <label className="block text-xs font-medium text-gray-500 mb-1">
                     Content <span className="text-gray-400 font-normal ml-1">(Markdown Supported)</span>
@@ -246,8 +208,27 @@ const Docs = ({
                 />
               </div>
 
+              {/* 3. Right Side: Delete Button (Aligned with Inputs) */}
+              <div className="pt-[26px]"> {/* Matches label height + padding to align with input box */}
+                <button
+                    onClick={() => handleDeleteRow(index)}
+                    disabled={isAnySubmitting}
+                    className="flex items-center justify-center w-9 h-9 rounded bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all shadow-sm"
+                    title="Remove Document"
+                >
+                    <Trash2 size={16} />
+                </button>
+              </div>
+
             </div>
           ))}
+          
+          {docs.length === 0 && (
+             <div className="text-center py-10 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg bg-white">
+                <p>No documents added yet.</p>
+          
+             </div>
+          )}
         </div>
       </div>
 

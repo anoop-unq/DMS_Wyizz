@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { metadataApi, campaignDiscountApi } from "../utils/metadataApi";
+import StepHeader from "../StepReusable/Stepheader";
 
 export default function CardNetworkType({
   data,
@@ -155,19 +156,7 @@ export default function CardNetworkType({
       <div className="flex-1 overflow-y-auto hide-scroll p-4 bg-gray-50/30">
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex gap-3 items-center">
-            {/* ✅ UPDATED: Changed from 7 to 8 */}
-            <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-[#EFEFFD] text-[#7747EE] text-xs">
-              8
-            </span>
-            <h3 className="card-inside-head">Card Configuration</h3>
-          </div>
-          {/* ✅ UPDATED: Changed from 'Step 7 of 8' to 'Step 8 of 9' */}
-          <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
-            Step 8 of 9
-          </div>
-        </div>
+              <StepHeader step={8} totalSteps={9} title="Card Configuration" />
 
         {/* Content */}
         {loadingMeta ? (

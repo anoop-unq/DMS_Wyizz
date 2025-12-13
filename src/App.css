@@ -423,17 +423,11 @@
 }
 
 
-/* Add this to your App.css or inside a <style> tag */
-.micro-scrollbar::-webkit-scrollbar {
-  height: 2px; /* Very thin */
+
+input.bronze-icon::-webkit-calendar-picker-indicator {
+    filter: invert(48%) sepia(13%) saturate(836%) hue-rotate(178deg) brightness(95%) contrast(93%);
 }
-.micro-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.micro-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Light gray */
-  border-radius: 10px;
-}
-.micro-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: #7747EE; /* Brand color on hover */
+
+input.bronze-icon::-moz-calendar-picker-indicator {
+filter: invert(48%) sepia(13%) saturate(836%) hue-rotate(178deg) brightness(95%) contrast(93%);
 }

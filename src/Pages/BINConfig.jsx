@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { metadataApi, campaignDiscountApi, campaignApi } from "../utils/metadataApi"; 
+import StepHeader from "../StepReusable/Stepheader";
 
 const BINConfig = ({ 
   data, 
@@ -436,13 +437,7 @@ const generatePayload = (
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex gap-2 items-center">
-          <span className="w-5 h-5 text-center bg-[#EFEFFD] text-[#7747EE] rounded-full text-xs flex items-center justify-center mb-2">2</span>
-          <h3 className="card-inside-head">BIN Configuration</h3>
-        </div>
-        <div className="text-xs text-gray-500">Step 2 of 6</div>
-        </div>
+          <StepHeader step={2} totalSteps={9} title="BIN Configuration" />
 
       {/* Controls Row */}
       <div className="bg-[#F7F9FB] border border-[#E2E8F0] rounded p-4 grid grid-cols-1 lg:grid-cols-1 gap-4 items-end">

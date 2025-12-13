@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import Pagination from "../Components/Pagination";
 import { metadataApi, campaignDiscountApi } from "../utils/metadataApi";
+import StepHeader from "../StepReusable/Stepheader";
 
 export default function MCCSelection({
   data,
@@ -195,19 +196,7 @@ export default function MCCSelection({
       <div className="flex-1 overflow-y-auto hide-scroll p-4 bg-gray-50/30">
         {/* Header */}
 
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex gap-3 items-center">
-            <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-[#EFEFFD] text-[#7747EE] text-xs">
-              6
-            </span>
-            <h3 className="card-inside-head">Mcc Selection</h3>
-          </div>
-          <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
-            Step 6 of 7
-          </div>
-
-          
-        </div>
+      <StepHeader step={6} totalSteps={9} title="MCC Selection" />
 
         {/* LOADING GRID */}
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { metadataApi, campaignDiscountApi } from "../utils/metadataApi"; 
 import { Loader2 } from "lucide-react"; 
+import StepHeader from "../StepReusable/Stepheader";
 
 // ==============================================================================
 // 1. MERCHANT CARD (UI Component)
@@ -619,11 +620,7 @@ export default function Restrictions({
 
   return (
     <div className="rounded-lg border border-gray-200 p-4 shadow-sm bg-[#F7F9FB] min-h-screen flex flex-col h-full">
-      <div className="flex-shrink-0 mb-6 flex items-center gap-3">
-        <span className="w-5 h-5 inline-flex items-center justify-center rounded-full" style={{ background: "#EFEFFD", color: "#7747EE", fontSize: 12 }}>4</span>
-        <h3 className="card-inside-head">Campaign Restrictions</h3>
-      </div>
-
+       <StepHeader step={4} totalSteps={9} title="Campaign Restrictions" />
       <div className="flex-shrink-0 bg-white border border-[#E2E8F0] rounded-md p-5 mb-8">
         <label className="text-sm text-gray-700 font-medium mb-2 block">Select Company <span className="text-red-500">*</span></label>
         <div className="flex items-start gap-3">

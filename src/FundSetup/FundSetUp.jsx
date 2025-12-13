@@ -11,6 +11,7 @@ import {
   formatDisplayDate 
 } from "../utils/dateHelpers";
 import { Settings, Loader2 } from "lucide-react";
+import StepHeader from "../StepReusable/Stepheader";
 
 const FundSetup = ({
   data,
@@ -402,17 +403,7 @@ const FundSetup = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex gap-3 items-center">
-          <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-[#EFEFFD] text-[#7747EE] text-xs">
-            5
-          </span>
-          <h3 className="card-inside-head">Time Restrictions</h3>
-        </div>
-        <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
-          Step 5 of 6
-        </div>
-      </div>
+            <StepHeader step={5} totalSteps={9} title="Time Restrictions" />
 
       {/* Date Controls */}
 
