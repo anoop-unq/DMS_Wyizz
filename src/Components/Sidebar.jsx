@@ -1,4 +1,3 @@
-// Sidebar.jsx - Updated
 import React, { useState } from "react";
 import { AiOutlineClose } from "react-icons/ai";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -22,7 +21,6 @@ export default function Sidebar({ sidebarToggle, setSidebarToggle, isMobile, use
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  // ✅ Get userType from props (passed from App.jsx)
   const currentUserType = userType ; // Default fallback
   console.log(currentUserType,"7285")
   // ✅ Define navigation sections based on userType
@@ -124,7 +122,7 @@ export default function Sidebar({ sidebarToggle, setSidebarToggle, isMobile, use
     <>
       {shouldShowSidebar && (
         <aside
-          className={`h-full bg-white overflow-hidden z-30 flex flex-col ${
+          className={`h-full bg-white overflow-hidden z-399 flex flex-col ${
             isMobile
               ? "fixed top-0 left-0 w-64 shadow-2xl"
               : "relative w-64 flex-shrink-0"

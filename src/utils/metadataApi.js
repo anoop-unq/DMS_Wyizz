@@ -130,6 +130,39 @@ getMccs: (params = {}) => {
   },
 };
 
+export const segmentApi = {
+  getAll: (params = {}) => {
+    const defaultParams = {
+      skip: 0,
+      limit: 10,
+      sort: "id", // Default sort updated as requested
+      direction: "desc",
+    };
+
+    const finalParams = { ...defaultParams, ...params };
+
+    return api.get("/dmsapi/segments", {
+      params: finalParams,
+    });
+  },
+
+  getById: (id) => {
+    return api.get(`/dmsapi/segments/${id}`);
+  },
+
+  create: (payload) => {
+    return api.post("/dmsapi/segments", payload);
+  },
+
+  update: (id, payload) => {
+    return api.put(`/dmsapi/segments/${id}`, payload);
+  },
+
+  delete: (id) => {
+    return api.delete(`/dmsapi/segments/${id}`);
+  },
+};
+
 export const campaignApi = {
   getCampaigns: (params) => {
     // The 'params' object should contain { limit, skip, sort, direction }
@@ -210,41 +243,48 @@ export const campaignDiscountApi = {
     return api.delete(`/dmsapi/campaign-discounts/${id}`);
   },
 
-  approve: (id,data) => {
-    return api.post(`/dmsapi/campaign-discounts/${id}/approve`,data);
+  makerSubmit: (id, payload = {}) => {
+    return api.post(`/dmsapi/campaigns/${id}/submit`, payload);
   },
+  makerPause: (id) => {
+    return api.post(`/dmsapi/campaigns/${id}/pause`);
+  },
+
+  // ✅ New Maker Resume API
+  makerResume: (id) => {
+    return api.post(`/dmsapi/campaigns/${id}/resume`);
+  },
+  
 };
 
 
-export const segmentApi = {
-  getAll: (params = {}) => {
-    const defaultParams = {
-      skip: 0,
-      limit: 10,
-      sort: "id", // Default sort updated as requested
-      direction: "desc",
-    };
-
-    const finalParams = { ...defaultParams, ...params };
-
-    return api.get("/dmsapi/segments", {
-      params: finalParams,
+export const discountCheckerApi = {
+  // 1. Approve Campaign
+  // URL: {{baseUrl}}/dmsapi/campaigns/:id/approve?comments=...
+  approve: (id, comments) => {
+    return api.post(`/dmsapi/campaigns/${id}/approve`, null, {
+      params: { comments: comments }
     });
   },
 
-  getById: (id) => {
-    return api.get(`/dmsapi/segments/${id}`);
+
+  reject: (id, comments) => {
+    return api.post(`dmsapi/campaigns/${id}/reject`, null, {
+      params: { comments: comments }
+    });
   },
 
-  create: (payload) => {
-    return api.post("/dmsapi/segments", payload);
+
+  approveDelete: (id, comments) => {
+    return api.post(`/dmsapi/campaigns/${id}/delete-approve`, null, {
+      params: { comments: comments }
+    });
   },
 
-  update: (id, payload) => {
-    return api.put(`/dmsapi/segments/${id}`, payload);
-  },
 
-  delete: (id) => {
-    return api.delete(`/dmsapi/segments/${id}`);
+  rejectDelete: (id, comments) => {
+    return api.post(`/dmsapi/campaigns/${id}/delete-reject`, null, {
+      params: { comments: comments }
+    });
   },
 };

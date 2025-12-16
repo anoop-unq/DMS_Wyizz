@@ -306,9 +306,9 @@ const DiscountConfiguration = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
       {/* Header */}
-            <StepHeader step={3} totalSteps={9} title="Discount Configuration" />
+      <StepHeader step={3} totalSteps={9} title="Discount Configuration" />
 
       {/* Main Content Area */}
       <div className="bg-[#F7F9FB] border border-gray-100 rounded p-4 mb-4">
@@ -326,7 +326,7 @@ const DiscountConfiguration = ({
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 gap-3 max-h-[600px] overflow-y-auto hide-scroll pr-1 custom-scrollbar">
+        <div className="grid grid-cols-1 gap-3 overflow-y-auto hide-scroll pr-1 max-h-[210px] md:max-h-[220px] lg:max-h-[265px]">
           {ranges.map((r, idx) => (
             <div
               key={r.id}
@@ -624,60 +624,58 @@ const DiscountConfiguration = ({
       </div>
 
       {/* Footer */}
- <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
-  
-  {/* PREVIOUS BUTTON */}
-  <button
-    onClick={onPrevious}
-    disabled={isFormDisabled}
-    className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50"
-  >
-    <span className="flex justify-center items-center gap-2">
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#000000"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M15 18l-6-6 6-6" />
-      </svg>
-      Previous
-    </span>
-  </button>
+      <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+        {/* PREVIOUS BUTTON */}
+        <button
+          onClick={onPrevious}
+          disabled={isFormDisabled}
+          className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50"
+        >
+          <span className="flex justify-center items-center gap-2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#000000"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Previous
+          </span>
+        </button>
 
-  <div className="flex gap-3">
-    
-    {/* UPDATE BUTTON (Edit Mode Only) */}
-    {isEditMode && (
-      <button
-        onClick={() => handleSubmit("update")}
-        disabled={isFormDisabled}
-        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors"
-      >
-        {isUpdateSubmitting ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : null}
-        {isUpdateSubmitting ? "Updating..." : "Update"}
-      </button>
-    )}
+        <div className="flex gap-3">
+          {/* UPDATE BUTTON (Edit Mode Only) */}
+          {isEditMode && (
+            <button
+              onClick={() => handleSubmit("update")}
+              disabled={isFormDisabled}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors"
+            >
+              {isUpdateSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : null}
+              {isUpdateSubmitting ? "Updating..." : "Update"}
+            </button>
+          )}
 
-    {/* NEXT BUTTON */}
-    <button
-      onClick={() => handleSubmit("next")}
-      disabled={isFormDisabled || isLoadingData}
-      className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70"
-    >
-      {isNextSubmitting ? (
-        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-      ) : null}
-      {isNextSubmitting ? "Saving..." : "Next →"}
-    </button>
-  </div>
-</div>
+          {/* NEXT BUTTON */}
+          <button
+            onClick={() => handleSubmit("next")}
+            disabled={isFormDisabled || isLoadingData}
+            className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70"
+          >
+            {isNextSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : null}
+            {isNextSubmitting ? "Saving..." : "Next →"}
+          </button>
+        </div>
+      </div>
 
       {/* {isAnySubmitting && (
                 <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">

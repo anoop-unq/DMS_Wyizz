@@ -338,7 +338,7 @@ const CampaignDetails = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 pt-5 pr-5 pl-5 pb-5 shadow-sm relative">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm relative">
       <StepHeader step={1} totalSteps={6} title="Campaign Details" />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
@@ -558,10 +558,10 @@ const CampaignDetails = ({
       />
 
       {/* --- FOOTER BUTTONS --- */}
-      <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
-        <button onClick={onPrevious} disabled={isAnySubmitting} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] disabled:opacity-50">
+      <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-end items-center">
+        {/* <button onClick={onPrevious} disabled={isAnySubmitting} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] disabled:opacity-50">
            Previous
-        </button>
+        </button> */}
         <div className="flex gap-3">
           {isEditMode && (
             <button onClick={() => handleSubmit("update")} disabled={isAnySubmitting} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70">

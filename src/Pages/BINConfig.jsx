@@ -435,7 +435,7 @@ const generatePayload = (
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
       {/* Header */}
           <StepHeader step={2} totalSteps={9} title="BIN Configuration" />
 

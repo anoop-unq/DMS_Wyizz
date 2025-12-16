@@ -156,7 +156,7 @@ const Docs = ({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 pt-5 pr-5 pl-5 pb-5 shadow-sm relative">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm relative">
       <StepHeader step={7} totalSteps={9} title="Campaign Documentation" />
 
       <div className="bg-[#F7F9FB] border border-[#E2E8F0] p-4 rounded mb-6 overflow-y-scroll hide-scroll" style={{maxHeight:"450px"}}>

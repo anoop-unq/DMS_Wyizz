@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { campaignApi, campaignDiscountApi } from "../utils/metadataApi"; 
-import { Loader2 } from "lucide-react"; 
+import { Loader2, AlertCircle } from "lucide-react"; // Added AlertCircle for UI hint
 import Swal from 'sweetalert2'; 
 import StepHeader from "../StepReusable/Stepheader";
 
@@ -64,6 +65,9 @@ export default function CampaignSummaryUI({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userType, setUserType] = useState("");
   const [serverData, setServerData] = useState(null);
+  
+  // ✅ New State: Tracks if user has clicked "Save as Draft"
+  const [isDraftSaved, setIsDraftSaved] = useState(false);
 
   useEffect(() => {
       const role = localStorage.getItem("usertype");
@@ -134,7 +138,7 @@ export default function CampaignSummaryUI({
   };
   const displayMccs = getMccDisplay();
 
-  // ✅ Card Config Display (Using Step 8)
+  // ✅ Card Config Display
   const getCardConfigDisplay = () => {
       let netCount = 0;
       if (step8.discount_card_networks && step8.discount_card_networks.length > 0) {
@@ -222,6 +226,7 @@ export default function CampaignSummaryUI({
               finalSponsors = serverData.discount.discount_sponsors.map(s => ({ name: s.name, fund_percentage: Number(s.fund_percentage) }));
           }
 
+          // ... (Existing Segment, Date, Amount, MID, MCC, Card Logic remains same) ...
           // ==========================================
           // 1. SEGMENTS
           // ==========================================
@@ -254,9 +259,7 @@ export default function CampaignSummaryUI({
               };
           });
 
-          // ==========================================
-          // 2. DATES
-          // ==========================================
+          // Dates
           let finalDates = [];
           if (Array.isArray(step5.finalDiscountDates) && step5.finalDiscountDates.length > 0) finalDates = step5.finalDiscountDates;
           else if (serverData?.discount?.discount_dates) finalDates = serverData.discount.discount_dates;
@@ -267,16 +270,12 @@ export default function CampaignSummaryUI({
               return; 
           }
 
-          // ==========================================
-          // 3. AMOUNTS & MIDS & MCCs
-          // ==========================================
-          
-          // AMOUNTS
+          // Amounts
           let finalAmounts = [];
           if (Array.isArray(step3.finalDiscountAmounts) && step3.finalDiscountAmounts.length > 0) finalAmounts = step3.finalDiscountAmounts;
           else if (serverData?.discount?.discount_amounts) finalAmounts = serverData.discount.discount_amounts;
 
-          // MIDS
+          // MIDs
           let finalMids = [];
           if (Array.isArray(step4.finalMidRestrictions) && step4.finalMidRestrictions.length > 0) finalMids = step4.finalMidRestrictions;
           else if (serverData?.discount?.discount_mids) finalMids = serverData.discount.discount_mids;
@@ -288,38 +287,30 @@ export default function CampaignSummaryUI({
           } else if (serverData?.discount?.discount_mccs) {
               finalMccs = serverData.discount.discount_mccs.map(m => ({ mcc_id: m.mcc_id, mcc_group_id: m.mcc_group_id }));
           }
-// ✅ CARD NETWORKS (CORRECTED MAPPING)
+
+          // Card Networks & Types
           let finalNetworks = [];
           if (step8.discount_card_networks && Array.isArray(step8.discount_card_networks) && step8.discount_card_networks.length > 0) {
-              // Case A: User data from Step 8 (Fix: Map to IDs)
               finalNetworks = step8.discount_card_networks.map(n => n.card_network_id || n);
           } else if (serverData?.discount?.discount_card_networks) {
-              // Case B: Server Data (Objects) -> Extract IDs
               finalNetworks = serverData.discount.discount_card_networks.map(n => n.card_network_id);
           }
 
-          // ✅ CARD TYPES (CORRECTED MAPPING)
           let finalTypes = [];
           if (step8.discount_card_types && Array.isArray(step8.discount_card_types) && step8.discount_card_types.length > 0) {
-              // Case A: User data from Step 8 (Fix: Map to IDs)
               finalTypes = step8.discount_card_types.map(t => t.card_type_id || t);
           } else if (serverData?.discount?.discount_card_types) {
-              // Case B: Server Data (Objects) -> Extract IDs
               finalTypes = serverData.discount.discount_card_types.map(t => t.card_type_id);
           }
-          // DOCS (Using Step 7)
+
+          // DOCS
           let finalDocs = [];
-          console.log(finalNetworks,"728",finalTypes)
           if (step7.discount_docs && Array.isArray(step7.discount_docs)) {
             finalDocs = step7.discount_docs.filter(d => d.doc_name?.trim() || d.doc_text?.trim());
           } else if (serverData?.discount?.discount_docs) {
             finalDocs = serverData.discount.discount_docs;
           }
 
-          // ==========================================
-          // 5. CONSTRUCT FINAL PAYLOAD
-          // ==========================================
-       
           const fullPayload = {
               name: finalName,
               description: finalDesc,
@@ -339,53 +330,73 @@ export default function CampaignSummaryUI({
                   discount_amounts: finalAmounts,
                   discount_mccs: finalMccs,
                   discount_sponsors: finalSponsors,
-
-                  // ✅ Now safely sends only IDs: [3, 10]
                   discount_card_networks: finalNetworks, 
                   discount_card_types: finalTypes, 
-                  
                   discount_docs: finalDocs,
               }
           };
 
-          console.log("📤 Final Full Payload (Merged):", JSON.stringify(fullPayload, null, 2));
+          // ===============================================
+          // LOGIC SPLIT: DRAFT vs LAUNCH vs ADMIN
+          // ===============================================
 
-          // UPDATE API Call
-          await campaignDiscountApi.update(campaignId, fullPayload);
-          
-          if (buttonType === 'launch') {
-              if (userType === 'admin') {
-                  await campaignApi.approveCampaign(campaignId); 
-                  Swal.fire({ icon: 'success', title: 'Launched!', text: 'Campaign Updated, Approved & Launched!', confirmButtonColor: '#7B3FE4' });
-              } else {
-                  Swal.fire({ icon: 'success', title: 'Submitted!', text: 'Campaign Updated & Submitted for Approval!', confirmButtonColor: '#7B3FE4' });
-              }
-          } else {
-              Swal.fire({ icon: 'success', title: 'Saved!', text: 'Campaign Saved Successfully!', confirmButtonColor: '#7B3FE4', timer: 2000, showConfirmButton: false });
+          if (buttonType === 'draft') {
+            // 1. SAVE AS DRAFT LOGIC
+            console.log("📤 Saving Draft Payload:", JSON.stringify(fullPayload, null, 2));
+            await campaignDiscountApi.update(campaignId, fullPayload);
+            
+            // ✅ Set the state to true so the next button becomes clickable
+            setIsDraftSaved(true); 
+
+            Swal.fire({ icon: 'success', title: 'Saved!', text: 'Campaign Saved Successfully! You can now submit it.', confirmButtonColor: '#7B3FE4', timer: 2000, showConfirmButton: false });
+            
+            if (onRefresh) await onRefresh();
+
+          } else if (buttonType === 'launch') {
+             // 2. SUBMIT / LAUNCH LOGIC
+             
+             if (userType === 'admin') {
+                 // 2a. ADMIN: Update first (ensure latest data) then Approve
+                 await campaignDiscountApi.update(campaignId, fullPayload);
+                 await campaignApi.approveCampaign(campaignId); 
+                 Swal.fire({ icon: 'success', title: 'Launched!', text: 'Campaign Updated, Approved & Launched!', confirmButtonColor: '#7B3FE4' });
+             } else {
+                 // 2b. MAKER: Call makerSubmit API
+                 // Note: We assume the data was saved in the 'draft' step as enforced by the UI button
+                 console.log("🚀 Submitting for Approval (Maker)...");
+                 
+                 // ✅ Calling the new makerSubmit API
+                 await campaignDiscountApi.makerSubmit(campaignId); 
+                 
+                 Swal.fire({ icon: 'success', title: 'Submitted!', text: 'Campaign submitted for approval successfully!', confirmButtonColor: '#7B3FE4' });
+             }
+
+             if (onRefresh) await onRefresh();
+             onSubmit(); 
           }
-          
-          if (onRefresh) await onRefresh();
-          onSubmit(); 
 
       } catch (error) {
           console.error("Submission Error:", error);
-          const errMsg = error.response?.data?.detail || 'Failed to save campaign.';
-          Swal.fire({ icon: 'error', title: 'Submission Failed', text: errMsg, confirmButtonColor: '#d33' });
+          const errMsg = error.response?.data?.detail || 'Failed to process request.';
+          Swal.fire({ icon: 'error', title: 'Error', text: errMsg, confirmButtonColor: '#d33' });
       } finally {
           setIsSubmitting(false);
       }
   };
 
   const submitButtonLabel = userType === 'admin' ? "Launch Campaign" : "Submit for Approval";
+  
+  // ✅ Condition to disable the submit button for Makers if they haven't saved draft yet
+  const isSubmitDisabled = isSubmitting || (userType !== 'admin' && !isDraftSaved);
 
   return (
     <div className="w-full max-w-6xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm mb-6">
         
-
-            <StepHeader step={9} totalSteps={9} title="Campaign Summary & Review" />
+        <StepHeader step={9} totalSteps={9} title="Campaign Summary & Review" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* ... Summary Cards (Same as before) ... */}
           <div className="space-y-6">
             <SummaryCard title="Campaign Details">
               <DetailRow label="Campaign Name" value={displayName} />
@@ -444,14 +455,22 @@ export default function CampaignSummaryUI({
           </div>
         </div>
 
+        {/* Buttons Section */}
         <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-200">
       
-            <button onClick={onPrevious} disabled={isSubmitting}  className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" >
+           <button onClick={onPrevious} disabled={isSubmitting}  className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50" >
             <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Previous</span>
         </button>
       
 
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-4 items-center">
+             {/* Hint Text for Maker */}
+             {userType !== 'admin' && !isDraftSaved && (
+                <span className="text-xs text-amber-600 flex items-center gap-1 animate-pulse">
+                  <AlertCircle className="w-3 h-3" /> Save draft to enable submit
+                </span>
+             )}
+
             <button 
                 onClick={() => handleFinalSubmit('draft')} 
                 disabled={isSubmitting}
@@ -462,8 +481,13 @@ export default function CampaignSummaryUI({
             
             <button 
                 onClick={() => handleFinalSubmit('launch')}
-                disabled={isSubmitting}
-                className="px-8 py-2.5 bg-gradient-to-r from-[#7B3FE4] to-[#9B5DF7] text-white rounded-lg text-sm font-bold shadow-md hover:from-[#6B3CD6] hover:to-[#8B4DE6] transform hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-70"
+                // ✅ Disabled logic applied here
+                disabled={isSubmitDisabled}
+                className={`px-8 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2 
+                    ${isSubmitDisabled 
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+                        : "bg-gradient-to-r from-[#7B3FE4] to-[#9B5DF7] text-white hover:from-[#6B3CD6] hover:to-[#8B4DE6] transform hover:-translate-y-0.5"
+                    }`}
             >
                {isSubmitting ? "Processing..." : submitButtonLabel}
             </button>
