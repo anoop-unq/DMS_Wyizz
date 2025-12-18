@@ -251,8 +251,8 @@ const CampaignDetails = ({
     if (!endDate) { newErrors.endDate = true; isValid = false; }
     if (!currency) { newErrors.currency = true; isValid = false; }
     if (!fundAmount) { newErrors.fundAmount = true; isValid = false; }
-    if (bankShare === "") { newErrors.bankShare = true; isValid = false; }
-    if (merchantShare === "") { newErrors.merchantShare = true; isValid = false; }
+    // if (bankShare === "") { newErrors.bankShare = true; isValid = false; }
+    // if (merchantShare === "") { newErrors.merchantShare = true; isValid = false; }
 
     if (startDate && endDate) {
       if (new Date(endDate) < new Date(startDate)) {
@@ -275,71 +275,219 @@ const CampaignDetails = ({
     return isValid;
   };
 
-  const handleSubmit = async (action) => {
+//   const handleSubmit = async (action) => {
+//     // 1. Validate Form & Shares
+//     if (!validateForm()) return;
+
+//     const totalShare = (parseFloat(bankShare) || 0) + (parseFloat(merchantShare) || 0) + extraShares.reduce((sum, s) => sum + (parseFloat(s.share) || 0), 0);
+//     if (totalShare > 100) {
+//       Swal.fire({ icon: "error", title: "Allocation Error", text: `Total share is ${totalShare}%. Max is 100%.` });
+//       return;
+//     }
+
+//     // ✅ FIX: If in Edit Mode and clicking "Next", skip API and just navigate
+//     if (isEditMode && action === "next") {
+//         onNext();
+//         return;
+//     }
+
+//     // --- PREPARE PAYLOAD ---
+//     const allCurrencies = [...new Set([Number(currency), ...targetCurrencies])];
+//     const sponsorsPayload = [
+//       { name: "Bank", fund_percentage: parseFloat(bankShare) || 0 },
+//       { name: "Merchant", fund_percentage: parseFloat(merchantShare) || 0 },
+//       ...extraShares.map((s) => ({ name: s.name, fund_percentage: parseFloat(s.share) || 0 })),
+//     ];
+
+//     const fullPayload = {
+//       name: campaignName, description, total_budget: parseFloat(fundAmount),
+//       start_date: new Date(startDate).toISOString(), end_date: new Date(endDate).toISOString(),
+//       bank_id: 1, type: campaignType, base_currency_id: Number(currency),
+//       is_multi_currency: convertToBase, 
+//       currencies: allCurrencies,
+//       discount: { discount_sponsors: sponsorsPayload },
+//     };
+
+//     if (action === "update") setIsUpdateSubmitting(true);
+//     else setIsNextSubmitting(true);
+
+//     try {
+//         let endpointCall = isEditMode && action === "update"
+//             ? campaignDiscountApi.update(data?.campaign?.id || data?.id, fullPayload)
+//             : campaignDiscountApi.create(fullPayload);
+        
+//         const response = await endpointCall;
+//         const newId = response.data?.campaign?.id || response.data?.id || (data?.campaign?.id || data?.id);
+
+//         onUpdate({ ...data, campaign: { ...data?.campaign, ...fullPayload }, id: newId });
+
+//         if (action === "update") {
+//             Swal.fire({ icon: "success", title: "Success", text: "Campaign Updated Successfully", timer: 1500, showConfirmButton: false });
+//             if (onRefresh) await onRefresh();
+//         } else {
+
+//           if (!isEditMode) {
+//                 // ✅ NEW: Show popup for newly created campaign
+//                 await Swal.fire({
+//                     icon: 'success',
+//                     title: 'Campaign Initialized!',
+                   
+//                     confirmButtonText: 'Proceed for next steps →',
+//                     confirmButtonColor: '#6366F1',
+//                     allowOutsideClick: false,
+//                 });
+//             }
+//             onNext();
+//         }
+// } catch (error) {
+//         console.error(error);
+
+
+//         const apiMessage = error.response?.data?.detail;
+//         const displayMessage = apiMessage || error.message || "Save failed";
+
+//         // ✅ 2. Show a friendly "Warning" instead of a harsh "Error"
+//         Swal.fire({
+//             icon: "error",         // Yellow icon (less shocking)
+//             title: "Action Required", // Professional title
+//             text: displayMessage,    // The exact message from your backend
+//             confirmButtonColor: "#7747EE",
+//             confirmButtonText: "Okay, I'll change it"
+//         });
+//     } finally {
+//         setIsUpdateSubmitting(false);
+//         setIsNextSubmitting(false);
+//     }
+//   }
+
+const handleSubmit = async (action) => {
     // 1. Validate Form & Shares
     if (!validateForm()) return;
 
-    const totalShare = (parseFloat(bankShare) || 0) + (parseFloat(merchantShare) || 0) + extraShares.reduce((sum, s) => sum + (parseFloat(s.share) || 0), 0);
+    // Calculate total share to check if we should send discount object
+    const totalShare =
+      (parseFloat(bankShare) || 0) +
+      (parseFloat(merchantShare) || 0) +
+      extraShares.reduce((sum, s) => sum + (parseFloat(s.share) || 0), 0);
+
     if (totalShare > 100) {
-      Swal.fire({ icon: "error", title: "Allocation Error", text: `Total share is ${totalShare}%. Max is 100%.` });
+      Swal.fire({
+        icon: "error",
+        title: "Allocation Error",
+        text: `Total share is ${totalShare}%. Max is 100%.`,
+      });
       return;
     }
 
     // ✅ FIX: If in Edit Mode and clicking "Next", skip API and just navigate
     if (isEditMode && action === "next") {
-        onNext();
-        return;
+      onNext();
+      return;
     }
 
     // --- PREPARE PAYLOAD ---
+    // (Logic for currencies remains unchanged as requested)
     const allCurrencies = [...new Set([Number(currency), ...targetCurrencies])];
-    const sponsorsPayload = [
-      { name: "Bank", fund_percentage: parseFloat(bankShare) || 0 },
-      { name: "Merchant", fund_percentage: parseFloat(merchantShare) || 0 },
-      ...extraShares.map((s) => ({ name: s.name, fund_percentage: parseFloat(s.share) || 0 })),
-    ];
 
+    // 1. Construct the Base Payload
     const fullPayload = {
-      name: campaignName, description, total_budget: parseFloat(fundAmount),
-      start_date: new Date(startDate).toISOString(), end_date: new Date(endDate).toISOString(),
-      bank_id: 1, type: campaignType, base_currency_id: Number(currency),
-      // ✅ FIX: Use local state to ensure API gets correct boolean
-      is_multi_currency: convertToBase, 
+      name: campaignName,
+      description,
+      total_budget: parseFloat(fundAmount),
+      start_date: new Date(startDate).toISOString(),
+      end_date: new Date(endDate).toISOString(),
+      bank_id: 1,
+      type: campaignType,
+      base_currency_id: Number(currency),
+      is_multi_currency: convertToBase,
       currencies: allCurrencies,
-      discount: { discount_sponsors: sponsorsPayload },
     };
+
+    // 2. ✅ Only add 'discount' object if shares are provided (totalShare > 0)
+    if (totalShare > 0) {
+      const sponsorsPayload = [
+        { name: "Bank", fund_percentage: parseFloat(bankShare) || 0 },
+        { name: "Merchant", fund_percentage: parseFloat(merchantShare) || 0 },
+        ...extraShares.map((s) => ({
+          name: s.name,
+          fund_percentage: parseFloat(s.share) || 0,
+        })),
+      ];
+
+      fullPayload.discount = { discount_sponsors: sponsorsPayload };
+    }
 
     if (action === "update") setIsUpdateSubmitting(true);
     else setIsNextSubmitting(true);
 
     try {
-        let endpointCall = isEditMode && action === "update"
-            ? campaignDiscountApi.update(data?.campaign?.id || data?.id, fullPayload)
-            : campaignDiscountApi.create(fullPayload);
-        
-        const response = await endpointCall;
-        const newId = response.data?.campaign?.id || response.data?.id || (data?.campaign?.id || data?.id);
+      let endpointCall =
+        isEditMode && action === "update"
+          ? campaignDiscountApi.update(
+              data?.campaign?.id || data?.id,
+              fullPayload
+            )
+          : campaignDiscountApi.create(fullPayload);
 
-        onUpdate({ ...data, campaign: { ...data?.campaign, ...fullPayload }, id: newId });
+      const response = await endpointCall;
+      const newId =
+        response.data?.campaign?.id ||
+        response.data?.id ||
+        data?.campaign?.id ||
+        data?.id;
 
-        if (action === "update") {
-            Swal.fire({ icon: "success", title: "Success", text: "Campaign Updated Successfully", timer: 1500, showConfirmButton: false });
-            if (onRefresh) await onRefresh();
-        } else {
-            onNext();
+      onUpdate({
+        ...data,
+        campaign: { ...data?.campaign, ...fullPayload },
+        id: newId,
+      });
+
+      if (action === "update") {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Campaign Updated Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        if (onRefresh) await onRefresh();
+      } else {
+        if (!isEditMode) {
+          // ✅ NEW: Show popup for newly created campaign
+          await Swal.fire({
+            icon: "success",
+            title: "Campaign Initialized!",
+
+            confirmButtonText: "Proceed for next steps →",
+            confirmButtonColor: "#6366F1",
+            allowOutsideClick: false,
+          });
         }
+        onNext();
+      }
     } catch (error) {
-        console.error(error);
-        Swal.fire({ icon: "error", title: "Error", text: error.message || "Save failed" });
+      console.error(error);
+
+      const apiMessage = error.response?.data?.detail;
+      const displayMessage = apiMessage || error.message || "Save failed";
+
+      // ✅ 2. Show a friendly "Warning" instead of a harsh "Error"
+      Swal.fire({
+        icon: "error", // Yellow icon (less shocking)
+        title: "Action Required", // Professional title
+        text: displayMessage, // The exact message from your backend
+        confirmButtonColor: "#7747EE",
+        confirmButtonText: "Okay, I'll change it",
+      });
     } finally {
-        setIsUpdateSubmitting(false);
-        setIsNextSubmitting(false);
+      setIsUpdateSubmitting(false);
+      setIsNextSubmitting(false);
     }
   };
-
+  
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm relative">
-      <StepHeader step={1} totalSteps={6} title="Campaign Details" />
+      <StepHeader step={1} totalSteps={9} title="Campaign Details" />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         {/* LEFT: Name & Description */}

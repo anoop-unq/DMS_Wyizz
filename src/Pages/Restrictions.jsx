@@ -319,6 +319,7 @@ export default function Restrictions({
             return {
               id: brand.id,
               name: brand.name,
+              logo:brand.logo,
               companyId: id, 
               mid: brand.mid || `ID: ${brand.id}`,
               category: brand.category || "General",
@@ -443,111 +444,282 @@ export default function Restrictions({
     loadCompanies();
   }, []);
 
-  useEffect(() => {
-    if (data && isFirstRun.current) {
-        if (data.selectedCompanies) {
-          const companyIds = data.selectedCompanies.map(c => {
-            if (typeof c === 'object' && c !== null) return c.id || c.value || c.companyId;
-            return c;
-          }).filter(id => id !== undefined);
-          setSelectedCompanies(companyIds);
-        }
-        if (data.selectedMIDs) setSelectedMIDs(new Set(data.selectedMIDs));
-        if (data.perMerchantTerminals) setPerMerchantTerminals(data.perMerchantTerminals);
-        isFirstRun.current = false;
-    }
+  // useEffect(() => {
+  //   if (data && isFirstRun.current) {
+  //       if (data.selectedCompanies) {
+  //         const companyIds = data.selectedCompanies.map(c => {
+  //           if (typeof c === 'object' && c !== null) return c.id || c.value || c.companyId;
+  //           return c;
+  //         }).filter(id => id !== undefined);
+  //         setSelectedCompanies(companyIds);
+  //       }
+  //       if (data.selectedMIDs) setSelectedMIDs(new Set(data.selectedMIDs));
+  //       if (data.perMerchantTerminals) setPerMerchantTerminals(data.perMerchantTerminals);
+  //       isFirstRun.current = false;
+  //   }
 
-    if (campaignId) {
-        console.log(`⏳ Step 4: Loading Data for Campaign ID: ${campaignId}`);
-        setIsLoadingData(true); 
+  //   if (campaignId) {
+  //       console.log(`⏳ Step 4: Loading Data for Campaign ID: ${campaignId}`);
+  //       setIsLoadingData(true); 
         
-        const fetchDiscountData = async () => {
-            try {
-                const res = await campaignDiscountApi.getById(campaignId);
-                const d = res.data?.discount || {};
-                const hasData = (d.mid_restrictions && d.mid_restrictions.length > 0) || 
-                                (d.discount_mids && d.discount_mids.length > 0);
-                if (hasData) await mapApiDataToState(d);
-            } catch (err) {
-                console.error("Failed to load Step 4 data:", err);
-            } finally {
-                setIsLoadingData(false);
-            }
-        };
-        fetchDiscountData();
-    }
-  }, [campaignId]);
+  //       const fetchDiscountData = async () => {
+  //           try {
+  //               const res = await campaignDiscountApi.getById(campaignId);
+  //               const d = res.data?.discount || {};
+  //               const hasData = (d.mid_restrictions && d.mid_restrictions.length > 0) || 
+  //                               (d.discount_mids && d.discount_mids.length > 0);
+  //               if (hasData) await mapApiDataToState(d);
+  //           } catch (err) {
+  //               console.error("Failed to load Step 4 data:", err);
+  //           } finally {
+  //               setIsLoadingData(false);
+  //           }
+  //       };
+  //       fetchDiscountData();
+  //   }
+  // }, [campaignId]);
 
   // ----------------------------------------------------------------------------
   // ✅ LOGIC 3: SUBMIT / UPDATE (THE PAYLOAD FIX)
   // ----------------------------------------------------------------------------
-  const handleNextSubmit = async (action) => {
-    let shouldCallApi = true;
-    if (isEditMode && action === 'next') shouldCallApi = false;
-
-    if (shouldCallApi) {
-        if (action === 'update') setIsUpdateSubmitting(true);
-        else setIsNextSubmitting(true);
+ 
+  useEffect(() => {
+    // Check if we have data from props or if we need to fetch from server
+    if (data && isFirstRun.current) {
+      if (data.selectedCompanies) {
+        const companyIds = data.selectedCompanies.map(c => 
+          (typeof c === 'object' && c !== null) ? (c.id || c.value || c.companyId) : c
+        ).filter(id => id !== undefined);
+        setSelectedCompanies(companyIds);
+      }
+      if (data.selectedMIDs) setSelectedMIDs(new Set(data.selectedMIDs));
+      if (data.perMerchantTerminals) setPerMerchantTerminals(data.perMerchantTerminals);
+      isFirstRun.current = false;
     }
 
-    const getFinalPayload = () => {
-        // Iterate over ALL selected brands
-        return Array.from(selectedMIDs).map((brandId) => {
+    // Logic for Edit Mode / Auto-populating from API
+    if (campaignId) {
+      const fetchDiscountData = async () => {
+        try {
+          setIsLoadingData(true);
+          const res = await campaignDiscountApi.getById(campaignId);
+          const d = res.data?.discount || {};
+          
+          const restrictions = d.discount_mids || [];
+          if (restrictions.length === 0) return;
+
+          const newSelectedMIDs = new Set();
+          const newPerMerchantTerminals = {};
+          const brandsWithAllTids = [];
+          
+          // Map to track which brands belong to which companies based on metadata
+          // We need this to open the UI "blocks"
+          const companiesToSelect = new Set();
+
+          // 1. First, extract the IDs and terminal selections
+          restrictions.forEach(item => {
+            newSelectedMIDs.add(item.brand_id);
+            
+            if (item.all_tids) {
+              brandsWithAllTids.push(item.brand_id);
+            } else if (item.discount_tids) {
+              newPerMerchantTerminals[item.brand_id] = item.discount_tids.map(t => t.terminal_id);
+            }
+          });
+
+          // 2. Fetch the metadata to link Brand IDs back to Company IDs
+          // We look through allCompanies to find matches for our Brand IDs
+          // Or we perform a metadata check if allMerchants isn't populated yet
+          const companiesRes = await metadataApi.getCompanies();
+          const companiesList = companiesRes.data?.rows || companiesRes.data || [];
+          
+          for (const brandId of Array.from(newSelectedMIDs)) {
+            // Find which company this brand belongs to by calling getBrands for each candidate company
+            // Or if your metadataApi.getBrands(id) is fast, we sync them here:
+            for (const company of companiesList) {
+              const bRes = await metadataApi.getBrands(company.id);
+              const bList = bRes.data?.rows || bRes.data || [];
+              if (bList.some(b => b.id === brandId)) {
+                companiesToSelect.add(company.id);
+                break; 
+              }
+            }
+          }
+
+          const finalCompanyIds = Array.from(companiesToSelect);
+
+          // 3. Update the UI States
+          setSelectedCompanies(finalCompanyIds);
+          setSelectedMIDs(newSelectedMIDs);
+          setPerMerchantTerminals(newPerMerchantTerminals);
+
+          // 4. Trigger the merchant fetch for each company so the UI is fully populated
+          await Promise.all(finalCompanyIds.map(id => 
+            fetchMerchantsForCompany(id, brandsWithAllTids)
+          ));
+
+        } catch (err) {
+          console.error("Failed to populate Step 4 from API:", err);
+        } finally {
+          setIsLoadingData(false);
+        }
+      };
+      
+      fetchDiscountData();
+    }
+  }, [campaignId]);
+
+  // Inside your Restrictions component, near other useEffects:
+
+useEffect(() => {
+    // Only sync if we have actually loaded initial data to prevent overwriting with empty states
+    if (!isLoadingData && !isFirstRun.current) {
+        
+        // 1. Prepare the live payload
+        const finalPayload = Array.from(selectedMIDs).map((brandId) => {
             const selectedTerms = perMerchantTerminals[brandId] || [];
             const merchant = allMerchants.find((m) => m.id === brandId);
             const totalTerms = merchant?.terminals?.length || 0;
-            
-            // ✅ DETERMINE IF "ALL" IS SELECTED
-            // It is "All" if we have terminals and we selected count matches total count
             const isAll = totalTerms > 0 && selectedTerms.length === totalTerms;
 
             return {
                 brand_id: brandId,
                 all_tids: isAll,
-                // ✅ CRITICAL FIX: IF all_tids IS TRUE, SEND EMPTY ARRAY []
                 discount_tids: isAll ? [] : selectedTerms.map((tid) => ({ terminal_id: tid }))
             };
         });
-    };
 
-    const finalPayload = getFinalPayload();
-    console.log("🚀 PAYLOAD PREVIEW:", JSON.stringify(finalPayload, null, 2));
-
-    onUpdate({
-      selectedCompanies,
-      selectedMIDs: Array.from(selectedMIDs),
-      perMerchantTerminals,
-      finalMidRestrictions: finalPayload
-    });
-    
-    try {
-        if (shouldCallApi) {
-            if (!campaignId) throw new Error("Missing Campaign ID");
-            
-            const apiBody = {
-                discount: { discount_mids: finalPayload }
-            };
-            
-            await campaignDiscountApi.update(campaignId, apiBody);
-            
-            if (action === 'update') {
-                if (onRefresh) await onRefresh();
-            }
-        }
-        if (action === 'next') onNext();
-    } catch (err) {
-        console.error("Error updating restrictions:", err);
-        const errMsg = err.response?.data?.message || err.message;
-        alert(`Failed to update restrictions. ${errMsg}`);
-    } finally {
-        if (action === 'update') setIsUpdateSubmitting(false);
-        else setIsNextSubmitting(false);
+        // 2. Push to parent state immediately
+        onUpdate({
+            selectedCompanies,
+            selectedMIDs: Array.from(selectedMIDs),
+            perMerchantTerminals,
+            finalMidRestrictions: finalPayload
+        });
     }
-  };
+}, [selectedMIDs, perMerchantTerminals, selectedCompanies, allMerchants, isLoadingData]);
+ 
+  // const handleNextSubmit = async (action) => {
+  //   let shouldCallApi = true;
+  //   if (isEditMode && action === 'next') shouldCallApi = false;
+
+  //   if (shouldCallApi) {
+  //       if (action === 'update') setIsUpdateSubmitting(true);
+  //       else setIsNextSubmitting(true);
+  //   }
+
+  //   const getFinalPayload = () => {
+  //       // Iterate over ALL selected brands
+  //       return Array.from(selectedMIDs).map((brandId) => {
+  //           const selectedTerms = perMerchantTerminals[brandId] || [];
+  //           const merchant = allMerchants.find((m) => m.id === brandId);
+  //           const totalTerms = merchant?.terminals?.length || 0;
+            
+  //           // ✅ DETERMINE IF "ALL" IS SELECTED
+  //           // It is "All" if we have terminals and we selected count matches total count
+  //           const isAll = totalTerms > 0 && selectedTerms.length === totalTerms;
+
+  //           return {
+  //               brand_id: brandId,
+  //               all_tids: isAll,
+  //               // ✅ CRITICAL FIX: IF all_tids IS TRUE, SEND EMPTY ARRAY []
+  //               discount_tids: isAll ? [] : selectedTerms.map((tid) => ({ terminal_id: tid }))
+  //           };
+  //       });
+  //   };
+
+  //   const finalPayload = getFinalPayload();
+  //   console.log("🚀 PAYLOAD PREVIEW:", JSON.stringify(finalPayload, null, 2));
+
+  //   onUpdate({
+  //     selectedCompanies,
+  //     selectedMIDs: Array.from(selectedMIDs),
+  //     perMerchantTerminals,
+  //     finalMidRestrictions: finalPayload
+  //   });
+    
+  //   try {
+  //       if (shouldCallApi) {
+  //           if (!campaignId) throw new Error("Missing Campaign ID");
+            
+  //           const apiBody = {
+  //               discount: { discount_mids: finalPayload }
+  //           };
+            
+  //           await campaignDiscountApi.update(campaignId, apiBody);
+            
+  //           if (action === 'update') {
+  //               if (onRefresh) await onRefresh();
+  //           }
+  //       }
+  //       if (action === 'next') onNext();
+  //   } catch (err) {
+  //       console.error("Error updating restrictions:", err);
+  //       const errMsg = err.response?.data?.message || err.message;
+  //       alert(`Failed to update restrictions. ${errMsg}`);
+  //   } finally {
+  //       if (action === 'update') setIsUpdateSubmitting(false);
+  //       else setIsNextSubmitting(false);
+  //   }
+  // };
 
   // ----------------------------------------------------------------------------
   // UI HANDLERS
   // ----------------------------------------------------------------------------
+  
+  // --- Updated Logic in Step 4 ---
+const handleNextSubmit = async (action) => {
+  // 1. Prepare the payload first
+  const finalPayload = Array.from(selectedMIDs).map((brandId) => {
+    const selectedTerms = perMerchantTerminals[brandId] || [];
+    const merchant = allMerchants.find((m) => m.id === brandId);
+    const totalTerms = merchant?.terminals?.length || 0;
+    const isAll = totalTerms > 0 && selectedTerms.length === totalTerms;
+
+    return {
+      brand_id: brandId,
+      all_tids: isAll,
+      discount_tids: isAll ? [] : selectedTerms.map((tid) => ({ terminal_id: tid }))
+    };
+  });
+
+  // 2. ALWAYS update the parent state so Summary can see it immediately
+  onUpdate({
+    selectedCompanies,
+    selectedMIDs: Array.from(selectedMIDs),
+    perMerchantTerminals,
+    finalMidRestrictions: finalPayload // Summary reads from this
+  });
+
+  // 3. Determine if we should call the Update API
+  let shouldCallApi = true;
+  if (isEditMode && action === 'next') shouldCallApi = false;
+
+  if (shouldCallApi) {
+    try {
+      if (action === 'update') setIsUpdateSubmitting(true);
+      else setIsNextSubmitting(true);
+
+      const apiBody = {
+        discount: { discount_mids: finalPayload }
+      };
+      await campaignDiscountApi.update(campaignId, apiBody);
+      
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      console.error("Update failed:", err);
+      return; // Stop if API fails
+    } finally {
+      setIsUpdateSubmitting(false);
+      setIsNextSubmitting(false);
+    }
+  }
+
+  // 4. Move to next step
+  if (action === 'next') onNext();
+}; 
+  
+  
   const toggleCompany = (companyId) => {
     setSelectedCompanies((prev) =>
       prev.includes(companyId) ? prev.filter((c) => c !== companyId) : [...prev, companyId]
@@ -620,7 +792,7 @@ export default function Restrictions({
 
   return (
     <div className="rounded-lg border border-gray-200 p-4 shadow-sm bg-[#F7F9FB] min-h-screen flex flex-col h-full">
-       <StepHeader step={4} totalSteps={9} title="Campaign Restrictions" />
+       <StepHeader step={4} totalSteps={9} title="Mids/Tids Restrictions" />
       <div className="flex-shrink-0 bg-white border border-[#E2E8F0] rounded-md p-5 mb-8">
         <label className="text-sm text-gray-700 font-medium mb-2 block">Select Company <span className="text-red-500">*</span></label>
         <div className="flex items-start gap-3">

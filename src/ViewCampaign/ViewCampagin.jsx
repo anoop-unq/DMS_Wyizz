@@ -138,7 +138,6 @@ const ViewCampaign = () => {
     fetchData();
   }, [id]);
 
-  // ✅ VALIDATION HELPER
   const validateRemarks = () => {
     if (!remarks || remarks.trim().length < 11) {
       Swal.fire({
@@ -542,7 +541,7 @@ const ViewCampaign = () => {
                   </p>
                   <div
                     className="space-y-1 overflow-y-auto pr-1 hide-scroll"
-                    style={{ maxHeight: "70px" }}
+                    style={{ maxHeight: "80px" }}
                   >
                     {extraShares.map((s, i) => (
                       <DetailRow
@@ -581,7 +580,7 @@ const ViewCampaign = () => {
                 {timeRules.length > 0 ? (
                   <div
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto pr-1 hide-scroll"
-                    style={{ maxHeight: "150px" }}
+                    style={{ maxHeight: "175px" }}
                   >
                     {timeRules.map((d, i) => (
                       <div
@@ -609,7 +608,7 @@ const ViewCampaign = () => {
                                   0,
                                   5
                                 )}`
-                              : "All Day"}
+                              : ""}
                           </span>
                         </div>
                       </div>
@@ -617,7 +616,7 @@ const ViewCampaign = () => {
                   </div>
                 ) : (
                   <span className="text-sm text-gray-900 font-semibold">
-                    Valid for all days
+                    No discount date selected
                   </span>
                 )}
               </div>
@@ -635,7 +634,7 @@ const ViewCampaign = () => {
                       </p>
                     </div>
                     <div className=" pr-10">
-                      <ListBadge items={cardNetworks} emptyText="" />
+                      <ListBadge items={cardNetworks} emptyText="No Card Networks Selected" />
                     </div>
 
                     {/* Card Types */}
@@ -646,7 +645,7 @@ const ViewCampaign = () => {
                       </p>
                     </div>
                     <div className=" pr-1 ">
-                      <ListBadge items={cardTypes} emptyText="All" />
+                      <ListBadge items={cardTypes} emptyText="No Card Types Selected" />
                     </div>
                   </div>
                 </div>
@@ -673,7 +672,7 @@ const ViewCampaign = () => {
                       </div>
                     ) : (
                       <span className="text-xs italic text-gray-400">
-                        All Categories
+                        No Mcc Code Selected
                       </span>
                     )}
                   </div>
@@ -767,13 +766,13 @@ const ViewCampaign = () => {
                     alt="apple"
                   />
                   <p className="text-[11px] font-bold text-gray-500 uppercase">
-                    Apple Pay Tokens
+                    Apple Tokens
                   </p>
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 h-full flex flex-col">
                   {allTokens.length > 0 ? (
-                    <div className="grid grid-cols-1  gap-2 max-h-[180px] overflow-y-auto pr-1 hide-scroll">
+                    <div className="grid grid-cols-1  gap-2 max-h-[210px] overflow-y-auto pr-1 hide-scroll">
                       {allTokens.map((t, idx) => (
                         <div
                           key={idx}
@@ -812,130 +811,129 @@ const ViewCampaign = () => {
         </div>
 
         {/* --- MERCHANT SCOPE CARD --- */}
-        <Card title="Merchant Scope" icon={Store}>
-          <div className="flex flex-col gap-3 h-full">
-            {/* Header inside content */}
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Layers size={14} className="text-slate-400" />
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Connected MIDs
-                </p>
-              </div>
+      {/* --- MERCHANT SCOPE CARD --- */}
+<Card title="Merchant Scope" icon={Store}>
+  <div className="flex flex-col gap-3 h-full">
+    {/* Header inside content */}
+    <div className="flex justify-between items-center">
+      <div className="flex items-center gap-2">
+        <Layers size={14} className="text-slate-400" />
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          Connected MIDs
+        </p>
+      </div>
 
-              {/* Global Badge (If applicable) */}
-              {merchantScopes.length === 0 && (
-                <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100">
-                  <Globe size={10} />
-                  <span className="text-[10px] font-bold uppercase tracking-wide">
-                    Global Access
-                  </span>
-                </div>
-              )}
-            </div>
+      {/* Global Badge (If applicable) */}
+      {merchantScopes.length === 0 && (
+        <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100">
+          <Globe size={10} />
+          <span className="text-[10px] font-bold uppercase tracking-wide">
+            Global Access
+          </span>
+        </div>
+      )}
+    </div>
 
-            {/* Scrollable Content Box */}
-            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 h-full flex flex-col min-h-[160px]">
-              {merchantScopes.length > 0 ? (
-                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1 hide-scroll">
-                  {merchantScopes.map((mid, i) => (
-                    /* Individual Brand Card */
+    {/* Scrollable Content Box */}
+    <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 h-full flex flex-col min-h-[160px]">
+      {merchantScopes.length > 0 ? (
+        <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1 hide-scroll">
+          {merchantScopes.map((mid, i) => (
+            /* Individual Brand Card */
+            <div
+              key={i}
+              className="flex flex-col bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group"
+            >
+              {/* Brand Header */}
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2.5">
+                  {/* Logo / Avatar Logic */}
+                  <div className="relative shrink-0">
+                    {mid.brand_logo ? (
+                      <img
+                        src={mid.brand_logo}
+                        alt={mid.brand_name}
+                        className="w-6 h-6 object-contain rounded-md bg-white border border-slate-100"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextSibling.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    {/* Fallback Avatar */}
                     <div
-                      key={i}
-                      className="flex flex-col bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors group"
+                      className="w-6 h-6 rounded-md bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600"
+                      style={{ display: mid.brand_logo ? "none" : "flex" }}
                     >
-                      {/* Brand Header */}
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2.5">
-                          {/* Logo / Avatar Logic */}
-                          <div className="relative shrink-0">
-                            {mid.brand_logo ? (
-                              <img
-                                src={mid.brand_logo}
-                                alt={mid.brand_name}
-                                className="w-6 h-6 object-contain rounded-md bg-white border border-slate-100"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                  e.target.nextSibling.style.display = "flex";
-                                }}
-                              />
-                            ) : null}
-                            {/* Fallback Avatar */}
-                            <div
-                              className="w-6 h-6 rounded-md bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600"
-                              style={{ display: mid.brand_logo ? "none" : "flex" }}
-                            >
-                              {mid.brand_name?.charAt(0)}
-                            </div>
-                          </div>
+                      {mid.brand_name?.charAt(0)}
+                    </div>
+                  </div>
 
-                          {/* Brand Name */}
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-700 leading-none">
-                              {mid.brand_name}
-                            </span>
-                            <span className="text-[9px] text-slate-400 font-medium mt-1">
-                              MID Component
-                            </span>
-                          </div>
-                        </div>
+                  {/* Brand Name */}
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-700 leading-none">
+                      {mid.brand_name}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-medium mt-1">
+                      MID Component
+                    </span>
+                  </div>
+                </div>
 
-                        {/* Status Badge */}
-                        <span
-                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded border  
+                {/* Status Badge */}
+                <span
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded border  
                   ${
                     mid.all_tids
                       ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                       : "bg-amber-50 text-amber-600 border-amber-100"
                   }`}
-                        >
-                          {mid.all_tids ? "ALL TERMINALS" : "RESTRICTED"}
+                >
+                  {mid.all_tids ? "ALL TERMINALS" : "RESTRICTED"}
+                </span>
+              </div>
+
+              {/* ✅ Nested Terminal List - Logic updated to show identifiers always */}
+              {mid.discount_tids && mid.discount_tids.length > 0 && (
+                <div className="relative pl-3 mt-1 ml-3 border-l-2 border-slate-100">
+                  <div className="flex flex-wrap gap-2 pt-1 pl-1">
+                    {mid.discount_tids.map((tid, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded hover:border-slate-300 transition-colors"
+                      >
+                        <TerminalSquare
+                          size={10}
+                          className="text-slate-400"
+                        />
+                        <span className="text-[10px] font-mono font-bold text-slate-600">
+                          {tid.terminal_identifier}
                         </span>
                       </div>
-
-                      {/* Nested Terminal List */}
-                      {!mid.all_tids && mid.discount_tids?.length > 0 && (
-                        <div className="relative pl-3 mt-1 ml-3 border-l-2 border-slate-100">
-                          <div className="flex flex-wrap gap-2 pt-1 pl-1">
-                            {mid.discount_tids.map((tid, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded hover:border-slate-300 transition-colors"
-                              >
-                                <TerminalSquare
-                                  size={10}
-                                  className="text-slate-400"
-                                />
-                                <span className="text-[10px] font-mono font-bold text-slate-600">
-                                  {tid.terminal_identifier}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* Empty State */
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-400 py-6 text-center">
-                  <div className="p-3 bg-white rounded-full border border-dashed border-slate-200 shadow-sm">
-                    <Globe size={20} className="text-blue-300" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">
-                      Universal Configuration
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Offer applies to all merchants
-                    </p>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-400 py-6 text-center">
+          <div className="p-3 bg-white rounded-full border border-dashed border-slate-200 shadow-sm">
+            <Globe size={20} className="text-blue-300" />
           </div>
-        </Card>
+          <div>
+            <p className="text-xs italic font-medium text-slate-500">
+             No Mcc are selected 
+            </p>
+           
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</Card>
 
         {/* DISCOUNT CONFIGURATION */}
         <Card title="Discount Configuration" icon={Percent}>
@@ -945,7 +943,7 @@ const ViewCampaign = () => {
                 discountAmounts.length > 1
                   ? "grid-cols-1 md:grid-cols-2"
                   : "grid-cols-1"
-              } max-h-[200px] overflow-y-auto hide-scroll pr-2`}
+              } max-h-[300px] overflow-y-auto hide-scroll pr-2`}
             >
               {discountAmounts.map((amt, idx) => (
                 <div

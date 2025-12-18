@@ -78,7 +78,7 @@ export default function CampaignForm({
     "Campaign Details",
     "BIN Config",
     "Discounts/Rewards",
-    "Restrictions",
+    "Mids/Tids Restrictions",
     "Time Restrictions",
     "MCC Config",
     "Docs",          // ✅ Step 7
@@ -436,3 +436,335 @@ const Stepper = ({ steps, currentStep, onStepClick }) => (
     </div>
   </div>
 );
+
+
+
+// import React, { useState, useEffect } from "react";
+// import { useAuthContext } from "../context/AuthContext"; // ✅ 1. Import Auth
+// import BINConfig from "./BINConfig";
+// import DiscountConfiguration from "./DiscountConfiguration";
+// import Restrictions from "./Restrictions";
+// import Summary from "./Summary";
+// import FundSetup from "../FundSetup/FundSetUp";
+// import MccSelection from "./MCCSelection";
+// import CardNetworkType from "./CardNetworkType";
+// import Docs from "./Docs";
+// import CampaignDetails from "../StepOne/CampaignDetails";
+
+// export default function CampaignForm({
+//   visible = true,
+//   onClose = () => {},
+//   initialData = null,
+//   onSuccess = () => {},
+//   onStep1Complete = () => {},
+//   onRefresh = () => {},
+// }) {
+//   // ✅ 2. Get User Role
+//   const { userType } = useAuthContext();
+//   const isDiscountMaker = userType === "discountmaker";
+
+//   const [step, setStep] = useState(1);
+//   const [isLoaded, setIsLoaded] = useState(false);
+//   const LOCAL_STORAGE_KEY = "campaignFormData";
+
+//   // ✅ 3. Define Steps with IDs (Logic Mapping)
+//   const allStepsConfig = [
+//     { label: "Campaign Details", id: "step1" },
+//     { label: "BIN Config", id: "step2" },
+//     { label: "Discounts/Rewards", id: "step3" },
+//     { 
+//       label: "Restrictions", 
+//       id: "step4", 
+//       hidden: isDiscountMaker // 👈 Hides if discount maker
+//     },
+//     { label: "Time Restrictions", id: "step5" },
+//     { label: "MCC Config", id: "step6" },
+//     { label: "Docs", id: "step7" },
+//     { label: "Card Config", id: "step8" },
+//     { label: "Summary", id: "step9" },
+//   ];
+
+//   // ✅ 4. Filter hidden steps to get the "Active" flow
+//   const activeSteps = allStepsConfig.filter((s) => !s.hidden);
+  
+//   // Extract just the labels for the Stepper UI
+//   const steps = activeSteps.map((s) => s.label);
+
+//   // ✅ 5. Determine which Logical Step is currently active
+//   // If DiscountMaker is on visual Step 4, this returns "step5" (Time Restrictions)
+//   const currentStepObj = activeSteps[step - 1] || {};
+//   const currentStepId = currentStepObj.id;
+
+//   const defaultState = {
+//     step1: {
+//       id: null,
+//       acquirer_campaign_id: null,
+//       name: "",
+//       description: "",
+//       startDate: "",
+//       endDate: "",
+//       campaignType: "Discount Campaign",
+//       currency: "",
+//       fundAmount: "",
+//       bankShare: "",
+//       merchantShare: "",
+//       extraShares: [],
+//       convertToBase: false,
+//       targetCurrencies: [],
+//     },
+//     step2: {
+//       selectedSegments: [],
+//       selectedSegmentIds: [],
+//       segmentRanges: {},
+//       tokens: [],
+//     },
+//     step3: { ranges: [] },
+//     step4: { // Restrictions (Data stays here even if hidden)
+//       selectedCompanies: [],
+//       selectedMIDs: [],
+//       merchantBasedEnabled: false,
+//       perMerchantTerminals: {},
+//     },
+//     step5: {
+//       configurationType: "pattern",
+//       patternConfigs: [],
+//       specificDateConfigs: [],
+//     },
+//     step6: { discount_mccs: [] },
+//     step7: { discount_docs: [{ doc_name: "", doc_text: "" }] },
+//     step8: { discount_card_networks: [], discount_card_types: [] },
+//     step9: {},
+//   };
+
+//   const [formData, setFormData] = useState(defaultState);
+
+//   const formatDate = (dateString) => {
+//     if (!dateString) return "";
+//     return dateString.split("T")[0];
+//   };
+
+//   useEffect(() => {
+//     if (!visible) {
+//       setIsLoaded(false);
+//       setFormData(defaultState);
+//       setStep(1);
+//       return;
+//     }
+
+//     if (initialData) {
+//       const c = initialData.campaign || {};
+//       const d = initialData.discount || {};
+
+//       console.log("📝 CampaignForm: Parsing Initial Data:", c, d);
+
+//       // ... (Existing parsing logic remains exactly the same) ...
+//       // I am abbreviating the parsing logic for brevity, 
+//       // keep your existing parsing code here.
+      
+//       const sponsors = d.discount_sponsors || [];
+//       const bankS = sponsors.find((s) => s.name === "Bank");
+//       // ... rest of your parsing variables ...
+      
+//       const newFormData = {
+//          // ... populate form data as you did before ...
+//          step1: { /*...*/ },
+//          // ...
+//          step4: { /* ... */ }, // Data still loads for step4 usually
+//          // ...
+//          step9: {},
+//       };
+
+//       setFormData(newFormData);
+//       setTimeout(() => setIsLoaded(true), 100);
+//     } else {
+//       const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+//       if (savedData) {
+//         try {
+//           const parsedData = JSON.parse(savedData);
+//           setFormData({ ...defaultState, ...parsedData });
+//         } catch (error) {
+//           setFormData(defaultState);
+//         }
+//       }
+//       setTimeout(() => setIsLoaded(true), 100);
+//     }
+//   }, [visible, initialData]);
+
+//   useEffect(() => {
+//     if (visible && isLoaded && !initialData) {
+//       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(formData));
+//     }
+//   }, [formData, isLoaded, initialData, visible]);
+
+//   const updateFormData = (stepKey, data) => {
+//     if (data === null || data === undefined) return;
+//     if (typeof data !== "object") data = {};
+
+//     const cleanData = Object.keys(data)
+//       .filter((key) => isNaN(parseInt(key)))
+//       .reduce((obj, key) => {
+//         obj[key] = data[key];
+//         return obj;
+//       }, {});
+
+//     setFormData((prev) => ({
+//       ...prev,
+//       [stepKey]: { ...prev[stepKey], ...cleanData },
+//     }));
+//   };
+
+//   const handleNext = () => {
+//     if (step === 1) {
+//       onStep1Complete();
+//     }
+
+//     // Check against length of dynamic 'steps' array
+//     if (step < steps.length) {
+//       setStep(step + 1);
+//     } else {
+//       if (!initialData) {
+//         localStorage.removeItem(LOCAL_STORAGE_KEY);
+//       }
+//       onSuccess();
+//     }
+//   };
+
+//   const handlePrevious = () => {
+//     if (step > 1) {
+//       setStep(step - 1);
+//     }
+//   };
+
+//   if (!visible) return null;
+
+//   return (
+//     <div className="w-full p-0">
+//       <Stepper steps={steps} currentStep={step} onStepClick={setStep} />
+//       <div className="mb-6">
+        
+//         {/* ✅ Render Logic: Check currentStepId instead of step number */}
+        
+//         {currentStepId === "step1" && (
+//           <CampaignDetails
+//             key={`step1`}
+//             data={formData.step1}
+//             onUpdate={(data) => updateFormData("step1", data)}
+//             onNext={handleNext}
+//             onPrevious={handlePrevious}
+//             onRefresh={onRefresh}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {currentStepId === "step2" && (
+//           <BINConfig
+//             key={`step2`}
+//             data={formData.step2}
+//             onUpdate={(data) => updateFormData("step2", data)}
+//             onNext={handleNext}
+//             onPrevious={handlePrevious}
+//             onRefresh={onRefresh}
+//             campaignId={formData.step1.id}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {currentStepId === "step3" && (
+//           <DiscountConfiguration
+//             key={`step3`}
+//             data={formData.step3}
+//             onUpdate={(data) => updateFormData("step3", data)}
+//             onNext={handleNext}
+//             onPrevious={handlePrevious}
+//             onRefresh={onRefresh}
+//             campaignId={formData.step1.id}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {/* Only renders if present in activeSteps */}
+//         {currentStepId === "step4" && (
+//           <Restrictions
+//             key={`step4`}
+//             data={formData.step4}
+//             onUpdate={(data) => updateFormData("step4", data)}
+//             onNext={handleNext}
+//             onPrevious={handlePrevious}
+//             allCompanies={[]}
+//             campaignId={formData.step1.id}
+//             onRefresh={onRefresh}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {/* If step4 is hidden, this becomes the visual 4th step */}
+//         {currentStepId === "step5" && (
+//           <FundSetup
+//             key={`step5`}
+//             data={formData.step5}
+//             onUpdate={(data) => updateFormData("step5", data)}
+//             onNext={handleNext}
+//             onPrevious={handlePrevious}
+//             campaignDatesFromProps={formData.step1}
+//             campaignId={formData.step1.id}
+//             onRefresh={onRefresh}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {currentStepId === "step6" && (
+//           <MccSelection
+//             key={`step6`}
+//             data={formData.step6}
+//             onUpdate={(data) => updateFormData("step6", data)}
+//             onNext={handleNext}
+//             campaignId={formData.step1.id}
+//             onPrevious={handlePrevious}
+//             onRefresh={onRefresh}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {currentStepId === "step7" && (
+//             <Docs
+//                 key={`step7`}
+//                 data={formData.step7}
+//                 onUpdate={(data) => updateFormData("step7", data)}
+//                 onNext={handleNext}
+//                 onPrevious={handlePrevious}
+//                 onRefresh={onRefresh}
+//                 campaignId={formData.step1.id}
+//                 isEditMode={!!initialData}
+//             />
+//         )}
+        
+//         {currentStepId === "step8" && (
+//           <CardNetworkType
+//             key={`step8`}
+//             data={formData.step8}
+//             onUpdate={(data) => updateFormData("step8", data)}
+//             onNext={handleNext}
+//             campaignId={formData.step1.id}
+//             onPrevious={handlePrevious}
+//             onRefresh={onRefresh}
+//             isEditMode={!!initialData}
+//           />
+//         )}
+        
+//         {currentStepId === "step9" && (
+//           <Summary
+//             data={formData}
+//             onPrevious={handlePrevious}
+//             onSubmit={handleNext}
+//             isEditMode={!!initialData}
+//             onRefresh={onRefresh}
+//             campaignId={formData.step1.id}
+//             onUpdate={(data) => updateFormData("step1", data)}
+//           />
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+// Stepper component remains unchanged...

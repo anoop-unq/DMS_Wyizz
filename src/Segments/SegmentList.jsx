@@ -91,7 +91,7 @@ const SegmentList = ({ bins, totalItems, currentPage, itemsPerPage, onPageChange
 
     <div
       className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 hide-scrollbar"
-      style={{ maxHeight: "75px", overflowY: "auto" }}
+      style={{ maxHeight: "65px", overflowY: "auto" }}
     >
       {b.tokens.map((t, idx) => (
         <div key={idx} className="flex items-center space-x-2 min-w-0">

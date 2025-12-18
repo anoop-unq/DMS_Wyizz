@@ -13,6 +13,16 @@ import {
   X,
   Pause, 
   Play,  
+  Coins, 
+  Check, 
+  Minus,
+  CheckCircle2, XCircle, Globe,
+  CombineIcon,
+  Currency,
+  Wallet,
+  Landmark,
+  CircleDollarSign,
+  CircleDollarSignIcon
 } from "lucide-react";
 
 import { assets } from "../assets/assets";
@@ -31,20 +41,36 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
 
   const isDiscountChecker = userType === "discountchecker";
   const isDiscountMaker = userType === "discountmaker";
-  
+  const isBank = userType === "bank";
+
   // ✅ Check if user is allowed to Pause/Resume (Maker, Bank, Admin)
   const canPauseResume = ["discountmaker", "bank", "admin"].includes(userType);
 
   const rawStatus = (c.rawStatus || "").toLowerCase();
 
-  // ✅ EDIT BUTTON VISIBILITY LOGIC
-  // Logic: Show Edit ONLY if Draft or Rejected. 
-  // Hidden for: Approved, Paused, Submitted, etc.
+
+  let showDeleteButton = ["draft", "rejected"].includes(rawStatus);
+  
+  // Also, usually, only Makers or Admins delete. 
+  // If you want to restrict it to specific roles AND status, use this:
+  if (isDiscountChecker) showDeleteButton = false;
+
   let showEditButton = true;
   if (isDiscountMaker) {
     if (!["draft", "rejected"].includes(rawStatus)) {
       showEditButton = false;
     }
+  }
+
+  if (isBank) {
+    // ✅ NEW RULE: Banks cannot update SUBMITTED campaigns (read-only)
+    if (rawStatus === "submitted") {
+      showEditButton = false;
+    }
+  }
+  
+  if (isDiscountChecker) {
+    showEditButton = false; 
   }
 
   // ✅ Status Color Logic
@@ -54,7 +80,7 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
     if (s === "approved") return "bg-green-100 text-green-800";
     if (s === "paused") return "bg-orange-100 text-orange-700";
     if (s === "inactive") return "bg-gray-100 text-gray-600";
-    if (s === "submitted") return "bg-blue-100 text-blue-700";
+    if (s === "submitted") return "bg-blue-500 text-white";
     if (s === "rejected") return "bg-red-100 text-red-700";
     return "bg-gray-100 text-gray-600";
   };
@@ -77,7 +103,7 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
         </div>
         <div>
           <span
-            className={`inline-block px-5 py-[3px] text-[11px] font-medium rounded-full ${getStatusColor(
+            className={`inline-block px-2 py-[2px] text-[11px] font-medium rounded-full ${getStatusColor(
               c.status
             )}`}
           >
@@ -98,27 +124,34 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
         {/* Left Column */}
         <div className="space-y-2">
        
-            <div className="flex items-center gap-2">
-              <img
-                src={assets.TargetValue}
-                className="w-3.5 h-3.5 object-contain"
-                alt="Target Value"
-              />
-              <div>
-                Value:{" "}
-                <span className="font-medium text-[#7C3F44]">{c.value}</span>
-              </div>
-            </div>
+           <div className="flex items-center justify-start gap-2">
+            <img
+              src={assets.sideCalendar}
+              className="w-3.5 h-3.5 object-contain"
+              alt="Calendar"
+            />
+            <div className="font-medium">{c.meta.starts}</div>
+          </div>
      
 
-          <div className="flex items-center gap-2">
-            <img
-              src={assets.Shop}
-              className="w-3.5 h-3.5 object-contain"
-              alt="Shop"
-            />
-            <div className="font-medium">{c.meta.merchant}</div>
+        <div className="flex items-center gap-2">
+            <Coins size={14} className="text-green-500" />
+            <div className="font-bold text-gray-800">{c.baseCurrency}</div>
+            <div className="flex items-center gap-1 ">
+               {c.isMultiCurrency ? (
+                 <div className="flex items-center gap-1 bg-green-50 px-1 rounded text-[10px] text-green-600 border border-[#E2E8F0]">
+                   <CheckCircle2 size={10} />
+                   <span>Multi</span>
+                 </div>
+               ) : (
+                 <div className="flex items-center gap-1 bg-gray-50 px-1 rounded text-[10px] text-gray-400 border border-[#E2E8F0]">
+                   <XCircle size={10} />
+                   <span>Single</span>
+                 </div>
+               )}
+            </div>
           </div>
+      
         </div>
 
         {/* Right Column */}
@@ -242,13 +275,15 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
             )}
 
             {/* Delete Button */}
-            <button
-              className="p-1.5 rounded-md hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
-              aria-label="delete"
-              onClick={() => onDelete(c.id)}
-            >
-              <Trash2 size={15} />
-            </button>
+          {showDeleteButton && (
+        <button
+          className="p-1.5 rounded-md hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+          aria-label="delete"
+          onClick={() => onDelete(c.id)}
+        >
+          <Trash2 size={15} />
+        </button>
+      )}
           </>
         )}
       </div>
@@ -362,15 +397,7 @@ export default function CampaignsPage() {
             .join(", ");
         }
 
-        let displayStatus =
-          c.status_name || (c.status === 1 ? "Active" : "Inactive");
-
-        if (displayStatus.toLowerCase() === "draft") {
-          displayStatus = "Active"; 
-        } else if (displayStatus.toLowerCase() === "pending_delete") {
-          displayStatus = "Inactive"; 
-        }
-
+       const displayStatus = c.status_name || "Unknown";
         return {
           id: c.id || `temp-${index}`,
           title: c.name || "",
@@ -385,10 +412,13 @@ export default function CampaignsPage() {
           totalBudget: c.total_budget || 1,
           transactions: c.transactions_count || 0,
           value: realValue,
+          baseCurrency: c.base_currency_code || "N/A",
+  isMultiCurrency: c.is_multi_currency || false,
           meta: {
             merchant: c.company_name || c.bank_name || "",
             card: realCardInfo,
-            ends: c.end_date ? new Date(c.end_date).toLocaleDateString() : "",
+            starts: c.end_date ? new Date(c.end_date).toLocaleDateString() : "",  
+            ends: c.start_date ? new Date(c.start_date).toLocaleDateString() : ""
           },
         };
       });
@@ -419,7 +449,7 @@ export default function CampaignsPage() {
     if (isStep1Completed && !editingCampaign) {
       Swal.fire({
         title: "Unsaved Progress",
-        text: "You have an incomplete campaign. Do you want to discard it?",
+        text: "You have an incomplete campaign. Do you want to close it?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d33",
@@ -582,7 +612,7 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      <div className="max-w-[1200px] mx-auto space-y-6 w-full flex-1 flex flex-col overflow-y-scroll hide-scroll">
+<div className="max-w-full space-y-6 w-full flex-1 flex flex-col overflow-y-scroll hide-scroll">
         <div className="flex items-start justify-between ">
           <div>
             <h1 className="head">Campaign Management</h1>
@@ -625,57 +655,47 @@ export default function CampaignsPage() {
         />
 
         {!showForm && (
-          <div className="flex flex-col flex-1">
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {/* Stats Cards (Keep as is) */}
-              <div className="bg-white py-3 px-4 rounded-md shadow-[0px_4px_8px_0px_#00000006] border border-gray-200 flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-medium text-gray-500">Total Request</p>
-                  <span className="text-[14px] font-medium text-gray-800">{stats.total}</span>
-                </div>
-                <Calendar size={18} className="text-gray-400" />
-              </div>
-              <div className="bg-white py-3 px-4 rounded-md shadow-[0px_4px_8px_0px_#00000006] border border-gray-200 flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-medium text-gray-500">Approved</p>
-                  <span className="text-[14px] font-medium text-gray-800">{stats.active}</span>
-                </div>
-                <span className="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full">Live</span>
-              </div>
-              <div className="bg-white py-3 px-4 rounded-md shadow-[0px_4px_8px_0px_#00000006] border border-gray-200 flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-medium text-gray-500">Pending</p>
-                  <span className="text-[14px] font-medium text-gray-800">{stats.pending}</span>
-                </div>
-                <span className="text-xs font-bold bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">Review</span>
-              </div>
-              <div className="bg-white py-3 px-4 rounded-md shadow-[0px_4px_8px_0px_#00000006] border border-gray-200 flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-medium text-gray-500">Rejected</p>
-                  <span className="text-[14px] font-medium text-gray-800">{stats.rejected}</span>
-                </div>
-                <span className="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">Blocked</span>
-              </div>
-            </section>
+     <div className="flex flex-col flex-1">
+  {/* Stats Cards Section - Slim Design */}
+          <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+  {[
+    { label: "Total Campaigns", value: stats.total },
+    { label: "Approved", value: stats.active },
+    { label: "Active", value: stats.currentlyRunning || 0 },
+    { label: "Submitted", value: stats.submitted || 0 },
+    { label: "Pending", value: stats.pending },
+    { label: "Rejected", value: stats.rejected },
+  ].map((item, index) => (
+    <div 
+      key={index} 
+      className="bg-white py-2 px-3 rounded-md shadow-[0px_2px_4px_0px_#00000006] border border-gray-200 flex flex-col justify-center min-h-[50px]"
+    >
+      <p className="text-[11px] font-normal text-gray-500 lowercase first-letter:uppercase">
+        {item.label}
+      </p>
+      <span className="text-[15px] font-normal text-gray-700">
+        {item.value}
+      </span>
+    </div>
+  ))}
+</section>
 
-            <div className="bg-[#FEFFFF] border border-[#F2F3F5] rounded-lg shadow-[0px_4px_8px_0px_#00000006] p-2 mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="relative w-[180px]">
-                  <LucideSearch
-                    size={12}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="pl-8 pr-3 py-[6px] w-full rounded-md text-xs font-normal text-[#64748B] border border-[#E5E7EB] bg-[#F9FAFB] focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]"
-                  />
-                </div>
-              </div>
-              <span className="text-xs font-medium text-[#64748B] whitespace-nowrap">
-                {totalItems} campaigns
-              </span>
-            </div>
+  {/* Search Bar Container */}
+  <div className="bg-[#FEFFFF] border border-[#F2F3F5] rounded-lg shadow-sm p-2 mb-6 flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <div className="relative w-[180px]">
+        <LucideSearch size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+        <input
+          type="text"
+          placeholder="Search..."
+          className="pl-8 pr-3 py-[5px] w-full rounded-md text-[11px] font-normal text-[#64748B] border border-[#E5E7EB] bg-[#F9FAFB] focus:outline-none"
+        />
+      </div>
+    </div>
+    <span className="text-[11px] font-normal text-[#64748B] pr-2">
+      {totalItems} campaigns
+    </span>
+  </div>
 
             {loading ? (
               <div className="flex justify-center py-10">
