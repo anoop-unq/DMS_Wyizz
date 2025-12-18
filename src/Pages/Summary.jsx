@@ -275,46 +275,6 @@ export default function CampaignSummaryUI({
           if (Array.isArray(step3.finalDiscountAmounts) && step3.finalDiscountAmounts.length > 0) finalAmounts = step3.finalDiscountAmounts;
           else if (serverData?.discount?.discount_amounts) finalAmounts = serverData.discount.discount_amounts;
 
-          // MIDs
-          // let finalMids = [];
-          // if (Array.isArray(step4.finalMidRestrictions) && step4.finalMidRestrictions.length > 0) finalMids = step4.finalMidRestrictions;
-          // else if (serverData?.discount?.discount_mids) finalMids = serverData.discount.discount_mids;
-
-          // --- Updated MIDs Logic inside handleFinalSubmit ---
-
-
-
-// Choose the source of data
-// let sourceMids = [];
-// if (step4.finalMidRestrictions && step4.finalMidRestrictions.length > 0) {
-//     console.log("✅ Using Fresh Step 4 Data");
-//     sourceMids = step4.finalMidRestrictions;
-// } else if (serverData?.discount?.discount_mids) {
-//     console.log("ℹ️ Using Existing Server Data");
-//     sourceMids = serverData.discount.discount_mids;
-// }
-
-// // 2. TRANSFORM & CLEAN (Strictly map to IDs only)
-// const finalMids = sourceMids.map(mid => {
-//     const cleanedMid = {
-//         brand_id: mid.brand_id,
-//         all_tids: !!mid.all_tids // Ensure boolean
-//     };
-
-//     // If not global terminals, only send the ID objects
-//     if (!mid.all_tids) {
-//       // Handle different possible structures of discount_tids
-//       const tids = mid.discount_tids || [];
-//       cleanedMid.discount_tids = tids.map(t => ({
-//           terminal_id: t.terminal_id || t // fallback if it's a raw ID
-//       }));
-//     } else {
-//       cleanedMid.discount_tids = [];
-//     }
-
-//     return cleanedMid;
-// });
-
 let rawMidsSource = [];
 if (step4.finalMidRestrictions && step4.finalMidRestrictions.length > 0) {
     // If Step 4 has any data, it means the user visited/modified it
@@ -444,7 +404,7 @@ const finalMids = rawMidsSource.map(mid => ({
   const isSubmitDisabled = isSubmitting || (userType !== 'admin' && !isDraftSaved);
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="w-full  ">
       <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm mb-6">
         
         <StepHeader step={9} totalSteps={9} title="Campaign Summary & Review" />
