@@ -246,7 +246,7 @@ const CampaignDetails = ({
     let errorMsg = "Please fill in all mandatory fields to proceed.";
 
     if (!campaignName.trim()) { newErrors.campaignName = true; isValid = false; }
-    if (!description.trim()) { newErrors.description = true; isValid = false; }
+    // if (!description.trim()) { newErrors.description = true; isValid = false; }
     if (!startDate) { newErrors.startDate = true; isValid = false; }
     if (!endDate) { newErrors.endDate = true; isValid = false; }
     if (!currency) { newErrors.currency = true; isValid = false; }
@@ -501,7 +501,7 @@ const handleSubmit = async (action) => {
             className={`w-full border bg-[#ffffff] rounded p-2 text-sm mb-3 outline-none ${getBorderClass("campaignName")}`}
             disabled={isAnySubmitting}
           />
-          <label className="block text-sm text-gray-700 mb-2">Description <span className="text-red-500">*</span></label>
+          <label className="block text-sm text-gray-700 mb-2">Description</label>
           <textarea
             value={description}
             onChange={(e) => handleDescriptionChange(e.target.value)}
@@ -662,7 +662,7 @@ const handleSubmit = async (action) => {
           <h4 className="text-sm font-semibold text-gray-800 mb-3">Fund Share</h4>
           <div className="mb-3">
             <div className="flex justify-between items-center mb-1">
-               <label className="text-xs font-medium text-gray-700">Bank Share (%) <span className="text-red-500">*</span></label>
+               <label className="text-xs font-medium text-gray-700">Bank Share (%) </label>
                <span className="text-[10px] text-gray-500 font-medium">Amount: {calculateAmount(bankShare)}</span>
             </div>
             <div className="relative">
@@ -679,7 +679,7 @@ const handleSubmit = async (action) => {
           </div>
           <div className="mb-3">
              <div className="flex justify-between items-center mb-1">
-               <label className="text-xs font-medium text-gray-700">Merchant Share (%) <span className="text-red-500">*</span></label>
+               <label className="text-xs font-medium text-gray-700">Merchant Share (%) </label>
                <span className="text-[10px] text-gray-500 font-medium">Amount: {calculateAmount(merchantShare)}</span>
             </div>
             <div className="relative">

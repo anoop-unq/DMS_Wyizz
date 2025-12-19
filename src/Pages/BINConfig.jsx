@@ -1753,7 +1753,23 @@ const BINConfig = ({
       </div>
 
       <div className="mt-8 border-t border-[#E2E8F0] pt-4 flex justify-between items-center bg-white">
-        <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#334155] text-[14px] font-medium hover:bg-gray-50 transition-colors">← Previous</button>
+        <button onClick={onPrevious} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#334155] text-[14px] font-medium hover:bg-gray-50 transition-colors"> 
+              <span className="flex justify-center items-center gap-2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#000000"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Previous
+          </span>
+        </button>
         <div className="flex gap-3">
           {isEditMode && <button onClick={() => handleSubmit("update")} className="px-6 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors">Update</button>}
           <button onClick={() => handleSubmit("next")} className="bg-[#6366F1] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-medium hover:bg-[#4f46e5] transition-colors">Next →</button>
