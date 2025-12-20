@@ -130,7 +130,7 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
               className="w-3.5 h-3.5 object-contain"
               alt="Calendar"
             />
-            <div className="font-medium">{c.meta.starts}</div>
+            <div className="font-medium">{c.meta.ends}</div>
           </div>
      
 
@@ -162,7 +162,7 @@ function CampaignCard({ c, onEdit, onDelete, onView, onPause, onResume, userType
               className="w-3.5 h-3.5 object-contain"
               alt="Calendar"
             />
-            <div className="font-medium">{c.meta.ends}</div>
+            <div className="font-medium">{c.meta.starts}</div>
           </div>
 
           <div className="flex items-center justify-end gap-2">
@@ -670,7 +670,7 @@ export default function CampaignsPage() {
       key={index} 
       className="bg-white py-2 px-3 rounded-md shadow-[0px_2px_4px_0px_#00000006] border border-gray-200 flex flex-col justify-center min-h-[50px]"
     >
-      <p className="text-[11px] font-normal text-gray-500 lowercase first-letter:uppercase">
+      <p className="text-[11px] font-normal text-gray-500">
         {item.label}
       </p>
       <span className="text-[15px] font-normal text-gray-700">

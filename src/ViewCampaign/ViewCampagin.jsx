@@ -925,7 +925,7 @@ const ViewCampaign = () => {
           </div>
           <div>
             <p className="text-xs italic font-medium text-slate-500">
-             No Mcc are selected 
+             No MIDS/TIDS Selected 
             </p>
            
           </div>
@@ -936,127 +936,137 @@ const ViewCampaign = () => {
 </Card>
 
         {/* DISCOUNT CONFIGURATION */}
-        <Card title="Discount Configuration" icon={Percent}>
-          {discountAmounts.length > 0 ? (
-            <div
-              className={`grid gap-6 ${
-                discountAmounts.length > 1
-                  ? "grid-cols-1 md:grid-cols-2"
-                  : "grid-cols-1"
-              } max-h-[300px] overflow-y-auto hide-scroll pr-2`}
-            >
-              {discountAmounts.map((amt, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden h-50 flex flex-col"
-                >
-                  {/* Slab Header */}
-                  <div className="bg-gray-50 px-4 py-2.5 flex justify-between items-center border-b border-gray-100 shrink-0">
-                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                      Slab {idx + 1}
-                    </span>
-                    {amt.max_discount_cap && (
-                      <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded border border-yellow-100 font-bold uppercase">
-                        Capped Offer
-                      </span>
-                    )}
-                  </div>
+      <Card title="Discount Configuration" icon={Percent}>
+  {discountAmounts.length > 0 ? (
+    <div
+      className={`grid gap-6 ${
+        discountAmounts.length > 1
+          ? "grid-cols-1 md:grid-cols-2"
+          : "grid-cols-1"
+      } max-h-[400px] overflow-y-auto hide-scroll pr-2`}
+    >
+      {discountAmounts.map((amt, idx) => (
+        <div
+          key={idx}
+          className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col"
+        >
+          {/* Slab Header */}
+          <div className="bg-gray-50 px-4 py-2.5 flex justify-between items-center border-b border-gray-100 shrink-0">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+              Slab {idx + 1}
+            </span>
+            <div className="flex gap-2">
+              {/* ✅ Added Tax Percentage Badge */}
+              {amt.tax_percentage && (
+                <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 font-bold uppercase">
+                  Tax: {amt.tax_percentage}%
+                </span>
+              )}
+              {amt.max_discount_cap && (
+                <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded border border-yellow-100 font-bold uppercase">
+                  Capped Offer
+                </span>
+              )}
+            </div>
+          </div>
 
-                  <div className="p-5 flex flex-col justify-between flex-1 gap-4">
-                    <div className="flex flex-col sm:flex-row items-center gap-6">
-                      {/* Discount Value */}
-                      <div className="flex flex-col items-center justify-center min-w-[100px]">
-                        <div className="text-3xl font-extrabold text-[#7747EE] leading-none">
-                          {amt.is_percentage
-                            ? `${amt.discount_percentage}%`
-                            : amt.discount_amount}
-                        </div>
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-1">
-                          {amt.is_percentage ? "Discount" : "Fixed Amount"}
-                        </span>
-                      </div>
-
-                      {/* Vertical Divider */}
-                      <div className="hidden sm:block w-px h-12 bg-gray-200 border-r border-dashed"></div>
-
-                      {/* Rules Grid */}
-                      <div className="flex-1 w-full grid grid-cols-3 gap-2 text-center">
-                        <div className="flex flex-col items-center p-1.5 bg-gray-50 rounded-lg border border-gray-100">
-                          <span className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">
-                            Min Spend
-                          </span>
-                          <span className="text-xs font-bold text-gray-800">
-                            {Number(amt.min_txn_amount).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center p-1.5 bg-gray-50 rounded-lg border border-gray-100">
-                          <span className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">
-                            Max Spend
-                          </span>
-                          <span className="text-xs font-bold text-gray-800">
-                            {Number(amt.max_txn_amount).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center p-1.5 bg-purple-50 rounded-lg border border-purple-100">
-                          <span className="text-[9px] font-bold text-purple-400 uppercase mb-0.5">
-                            Max Cap
-                          </span>
-                          <span className="text-xs font-bold text-[#7747EE]">
-                            {amt.max_discount_cap ? (
-                              Number(amt.max_discount_cap).toLocaleString()
-                            ) : (
-                              <span className="text-lg leading-none">∞</span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Usage Limits Section */}
-                    {(amt.daily || amt.weekly || amt.monthly) && (
-                      <div className="pt-3 border-t border-dashed border-gray-200">
-                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-2">
-                          Usage Limits
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {amt.daily && (
-                            <span className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-600 font-medium">
-                              <span className="font-bold text-gray-800">
-                                Daily:
-                              </span>{" "}
-                              {amt.daily}
-                            </span>
-                          )}
-                          {amt.weekly && (
-                            <span className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-600 font-medium">
-                              <span className="font-bold text-gray-800">
-                                Weekly:
-                              </span>{" "}
-                              {amt.weekly}
-                            </span>
-                          )}
-                          {amt.monthly && (
-                            <span className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-600 font-medium">
-                              <span className="font-bold text-gray-800">
-                                Monthly:
-                              </span>{" "}
-                              {amt.monthly}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+          <div className="p-5 flex flex-col justify-between flex-1 gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              {/* Discount Value */}
+              <div className="flex flex-col items-center justify-center min-w-[100px]">
+                <div className="text-3xl font-extrabold text-[#7747EE] leading-none">
+                  {amt.is_percentage
+                    ? `${amt.discount_percentage}%`
+                    : amt.discount_amount}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-gray-400 text-center italic py-4 bg-gray-50 rounded border border-dashed border-gray-200">
-              No discount rules configured
-            </div>
-          )}
-        </Card>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-1">
+                  {amt.is_percentage ? "Discount" : "Fixed Amount"}
+                </span>
+              </div>
 
+              {/* Vertical Divider */}
+              <div className="hidden sm:block w-px h-12 bg-gray-200 border-r border-dashed"></div>
+
+              {/* Rules Grid */}
+              <div className="flex-1 w-full grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div className="flex flex-col items-center p-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">
+                    Min Spend
+                  </span>
+                  <span className="text-xs font-bold text-gray-800">
+                    {Number(amt.min_txn_amount).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center p-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">
+                    Max Spend
+                  </span>
+                  <span className="text-xs font-bold text-gray-800">
+                    {Number(amt.max_txn_amount).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center p-1.5 bg-purple-50 rounded-lg border border-purple-100">
+                  <span className="text-[9px] font-bold text-purple-400 uppercase mb-0.5">
+                    Max Cap
+                  </span>
+                  <span className="text-xs font-bold text-[#7747EE]">
+                    {amt.max_discount_cap ? (
+                      Number(amt.max_discount_cap).toLocaleString()
+                    ) : (
+                      <span className="text-lg leading-none">∞</span>
+                    )}
+                  </span>
+                </div>
+                {/* ✅ Added Tax Detail in Grid for better visibility */}
+                <div className="flex flex-col items-center p-1.5 bg-blue-50 rounded-lg border border-blue-100">
+                  <span className="text-[9px] font-bold text-blue-400 uppercase mb-0.5">
+                    Tax
+                  </span>
+                  <span className="text-xs font-bold text-blue-800">
+                    {amt.tax_percentage}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Usage Limits Section */}
+            {(amt.daily || amt.weekly || amt.monthly) && (
+              <div className="pt-3 border-t border-dashed border-gray-200">
+                <p className="text-[9px] font-bold text-gray-400 uppercase mb-2">
+                  Usage Limits
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {amt.daily && (
+                    <span className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-600 font-medium">
+                      <span className="font-bold text-gray-800">Daily:</span>{" "}
+                      {amt.daily}
+                    </span>
+                  )}
+                  {amt.weekly && (
+                    <span className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-600 font-medium">
+                      <span className="font-bold text-gray-800">Weekly:</span>{" "}
+                      {amt.weekly}
+                    </span>
+                  )}
+                  {amt.monthly && (
+                    <span className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-600 font-medium">
+                      <span className="font-bold text-gray-800">Monthly:</span>{" "}
+                      {amt.monthly}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="text-gray-400 text-center italic py-4 bg-gray-50 rounded border border-dashed border-gray-200">
+      No discount rules configured
+    </div>
+  )}
+</Card>
         {/* DOCUMENTS */}
         <Card title="Documentation" icon={FileText}>
           <ScrollableList

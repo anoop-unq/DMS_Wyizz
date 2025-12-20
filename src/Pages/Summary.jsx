@@ -230,34 +230,68 @@ export default function CampaignSummaryUI({
           // ==========================================
           // 1. SEGMENTS
           // ==========================================
-          let sourceSegments = [];
-          if (Array.isArray(step2.finalSegmentsData) && step2.finalSegmentsData.length > 0) {
-              sourceSegments = step2.finalSegmentsData;
-          } else if (serverData?.discount?.discount_segments) {
-              sourceSegments = serverData.discount.discount_segments;
-          }
+          // let sourceSegments = [];
+          // if (Array.isArray(step2.finalSegmentsData) && step2.finalSegmentsData.length > 0) {
+          //     sourceSegments = step2.finalSegmentsData;
+          // } else if (serverData?.discount?.discount_segments) {
+          //     sourceSegments = serverData.discount.discount_segments;
+          // }
 
-          const finalSegments = sourceSegments.map(s => {
-              const rawBins = s.bin_ranges || s.discount_bins || [];
-              const rawTokens = s.apple_tokens || s.discount_apple_tokens || [];
+          // const finalSegments = sourceSegments.map(s => {
+          //     const rawBins = s.bin_ranges || s.discount_bins || [];
+          //     const rawTokens = s.apple_tokens || s.discount_apple_tokens || [];
 
-              const discountBins = rawBins.map(b => ({
-                  start_bin: b.start_bin || b.start,
-                  end_bin: b.end_bin || b.end
-              }));
+          //     const discountBins = rawBins.map(b => ({
+          //         start_bin: b.start_bin || b.start,
+          //         end_bin: b.end_bin || b.end
+          //     }));
 
-              const discountTokens = rawTokens.map(t => ({
-                  token_value: typeof t === 'string' ? t : (t.token_value || t.token)
-              }));
+          //     const discountTokens = rawTokens.map(t => ({
+          //         token_value: typeof t === 'string' ? t : (t.token_value || t.token)
+          //     }));
 
-              return { 
-                  segment_id: s.segment_id || s.id, 
-                  all_bins: s.all_bins ?? (discountBins.length === 0), 
-                  all_tokens: s.all_tokens ?? (discountTokens.length === 0), 
-                  discount_bins: discountBins,          
-                  discount_apple_tokens: discountTokens 
-              };
-          });
+          //     return { 
+          //         segment_id: s.segment_id || s.id, 
+          //         all_bins: s.all_bins ?? (discountBins.length === 0), 
+          //         all_tokens: s.all_tokens ?? (discountTokens.length === 0), 
+          //         discount_bins: discountBins,          
+          //         discount_apple_tokens: discountTokens 
+          //     };
+          // });
+
+          // ==========================================
+// 1. SEGMENTS (Corrected Logic)
+// ==========================================
+let sourceSegments = [];
+if (Array.isArray(step2.finalSegmentsData) && step2.finalSegmentsData.length > 0) {
+    sourceSegments = step2.finalSegmentsData;
+} else if (serverData?.discount?.discount_segments) {
+    sourceSegments = serverData.discount.discount_segments;
+}
+
+const finalSegments = sourceSegments.map(s => {
+    // Determine flags first
+    const isAllBins = s.all_bins === true;
+    const isAllTokens = s.all_tokens === true;
+
+    // Only map the arrays if the "All" flag is false
+    const discountBins = isAllBins ? [] : (s.bin_ranges || s.discount_bins || []).map(b => ({
+        start_bin: b.start_bin || b.start,
+        end_bin: b.end_bin || b.end
+    }));
+
+    const discountTokens = isAllTokens ? [] : (s.apple_tokens || s.discount_apple_tokens || []).map(t => ({
+        token_value: typeof t === 'string' ? t : (t.token_value || t.token)
+    }));
+
+    return { 
+        segment_id: s.segment_id || s.id, 
+        all_bins: isAllBins, 
+        all_tokens: isAllTokens, 
+        discount_bins: discountBins,          
+        discount_apple_tokens: discountTokens 
+    };
+});
 
           // Dates
           let finalDates = [];
