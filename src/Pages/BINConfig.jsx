@@ -35,7 +35,61 @@ const BINConfig = ({
     return `${binObj.start_bin} - ${binObj.end_bin}`;
   };
 
-  const generatePayload = (
+  // const generatePayload = (
+  //   currSegments = selectedSegments,
+  //   currRanges = segmentRanges,
+  //   currTokens = tokens
+  // ) => {
+  //   return currSegments.map((segName) => {
+  //     const originalSeg = availableSegments.find(
+  //       (s) => (s.segment_name || s.name) === segName
+  //     );
+
+  //     const masterRanges = originalSeg?.bin_ranges?.map(formatBinRange) || [];
+  //     const masterTokens = (
+  //       originalSeg?.apple_tokens ||
+  //       originalSeg?.discount_apple_tokens ||
+  //       []
+  //     ).map((t) => t.token_value || t);
+
+  //     const selectedRanges = currRanges[segName] || [];
+  //     const selectedTokens = currTokens
+  //       .filter((t) => t.checked && masterTokens.includes(t.value))
+  //       .map((t) => t.value);
+
+  //     const isAllBins = masterRanges.length > 0 && selectedRanges.length === masterRanges.length;
+  //     const isAllTokens = masterTokens.length > 0 && selectedTokens.length === masterTokens.length;
+
+  //     const segmentObj = {
+  //       segment_id: originalSeg?.id,
+  //       all_bins: isAllBins,
+  //       all_tokens: isAllTokens,
+  //     };
+
+  //     // ✅ LOGIC FIX: Only send arrays if NOT "All"
+  //     if (!isAllBins && selectedRanges.length > 0) {
+  //       const binPayload = selectedRanges
+  //         .filter((r) => r !== "N/A - N/A")
+  //         .map((range) => {
+  //           const [start, end] = range.split(" - ");
+  //           return { start_bin: start.trim(), end_bin: end.trim() };
+  //         });
+  //       if (binPayload.length > 0) segmentObj.discount_bins = binPayload;
+  //     } else if (isAllBins) {
+  //       segmentObj.discount_bins = []; // Explicitly clear if all_bins is true
+  //     }
+
+  //     if (!isAllTokens && selectedTokens.length > 0) {
+  //       segmentObj.discount_apple_tokens = selectedTokens.map((v) => ({ token_value: v }));
+  //     } else if (isAllTokens) {
+  //       segmentObj.discount_apple_tokens = []; // Explicitly clear if all_tokens is true
+  //     }
+
+  //     return segmentObj;
+  //   });
+  // };
+
+    const generatePayload = (
     currSegments = selectedSegments,
     currRanges = segmentRanges,
     currTokens = tokens
@@ -45,6 +99,7 @@ const BINConfig = ({
         (s) => (s.segment_name || s.name) === segName
       );
 
+      // 1. Get Master Data for this segment
       const masterRanges = originalSeg?.bin_ranges?.map(formatBinRange) || [];
       const masterTokens = (
         originalSeg?.apple_tokens ||
@@ -52,51 +107,61 @@ const BINConfig = ({
         []
       ).map((t) => t.token_value || t);
 
+      // 2. Get Current Selections
       const selectedRanges = currRanges[segName] || [];
       const selectedTokens = currTokens
         .filter((t) => t.checked && masterTokens.includes(t.value))
         .map((t) => t.value);
 
+      // 3. Determine "All" Flags
       const isAllBins = masterRanges.length > 0 && selectedRanges.length === masterRanges.length;
       const isAllTokens = masterTokens.length > 0 && selectedTokens.length === masterTokens.length;
 
-      const segmentObj = {
+      // 4. Map the data to objects (Always map them, don't clear to [])
+      const discountBins = selectedRanges
+        .filter((r) => r !== "N/A - N/A")
+        .map((range) => {
+          const [start, end] = range.split(" - ");
+          return { start_bin: start.trim(), end_bin: end.trim() };
+        });
+
+      const discountAppleTokens = selectedTokens.map((v) => ({ token_value: v }));
+
+      return {
         segment_id: originalSeg?.id,
+        segment_name: segName,
         all_bins: isAllBins,
         all_tokens: isAllTokens,
+        // ✅ ALWAYS passing the full data to the Summary UI
+        discount_bins: discountBins,
+        discount_apple_tokens: discountAppleTokens,
       };
-
-      // ✅ LOGIC FIX: Only send arrays if NOT "All"
-      if (!isAllBins && selectedRanges.length > 0) {
-        const binPayload = selectedRanges
-          .filter((r) => r !== "N/A - N/A")
-          .map((range) => {
-            const [start, end] = range.split(" - ");
-            return { start_bin: start.trim(), end_bin: end.trim() };
-          });
-        if (binPayload.length > 0) segmentObj.discount_bins = binPayload;
-      } else if (isAllBins) {
-        segmentObj.discount_bins = []; // Explicitly clear if all_bins is true
-      }
-
-      if (!isAllTokens && selectedTokens.length > 0) {
-        segmentObj.discount_apple_tokens = selectedTokens.map((v) => ({ token_value: v }));
-      } else if (isAllTokens) {
-        segmentObj.discount_apple_tokens = []; // Explicitly clear if all_tokens is true
-      }
-
-      return segmentObj;
     });
   };
 
+  // const updateParent = (updates) => {
+  //   onUpdate({
+  //     ...updates,
+  //     finalSegmentsData: generatePayload(
+  //       updates.selectedSegments || selectedSegments,
+  //       updates.segmentRanges || segmentRanges,
+  //       updates.tokens || tokens
+  //     ),
+  //   });
+  // };
+
   const updateParent = (updates) => {
+    const currentNames = updates.selectedSegments || selectedSegments;
+    const currentRanges = updates.segmentRanges || segmentRanges;
+    const currentTokens = updates.tokens || tokens;
+
     onUpdate({
       ...updates,
-      finalSegmentsData: generatePayload(
-        updates.selectedSegments || selectedSegments,
-        updates.segmentRanges || segmentRanges,
-        updates.tokens || tokens
-      ),
+      selectedSegments: currentNames,
+      segmentRanges: currentRanges,
+      tokens: currentTokens,
+      // Pass the fully populated array to the Summary UI
+      finalSegmentsData: generatePayload(currentNames, currentRanges, currentTokens),
     });
   };
 
@@ -261,19 +326,56 @@ const BINConfig = ({
     }
 
     action === "update" ? setIsUpdateSubmitting(true) : setIsNextSubmitting(true);
+    // try {
+    //   const payload = generatePayload();
+    //   await campaignDiscountApi.update(campaignId, { discount: { discount_segments: payload } });
+    //   if (onRefresh) await onRefresh();
+    //   if (action === "next") onNext();
+    //   Swal.fire({
+    //             icon: "success",
+    //             title: "Success",
+    //             text: "Campaign Updated Successfully",
+    //             timer: 1500,
+    //             showConfirmButton: false,
+    //       });
+    // } 
+
     try {
-      const payload = generatePayload();
-      await campaignDiscountApi.update(campaignId, { discount: { discount_segments: payload } });
+      // 1. Get the descriptive payload
+      const rawPayload = generatePayload();
+
+      // 2. Clean the payload ONLY for the API call (Backend requirement)
+      const apiPayload = rawPayload.map(seg => ({
+        segment_id: seg.segment_id,
+        all_bins: seg.all_bins,
+        all_tokens: seg.all_tokens,
+        // Backend logic: If all_bins is true, send [], otherwise send the list
+        discount_bins: seg.all_bins ? [] : seg.discount_bins,
+        discount_apple_tokens: seg.all_tokens ? [] : seg.discount_apple_tokens
+      }));
+
+      // 3. Send the CLEANED payload to the database
+      await campaignDiscountApi.update(campaignId, { 
+        discount: { discount_segments: apiPayload } 
+      });
+
       if (onRefresh) await onRefresh();
-      if (action === "next") onNext();
       Swal.fire({
-                icon: "success",
-                title: "Success",
-                text: "Campaign Updated Successfully",
-                timer: 1500,
-                showConfirmButton: false,
-          });
-    } catch (error) {
+        icon: "success",
+        title: "Success!",
+        text: action === "update" 
+          ? "BIN Configuration Updated Successfully" 
+          : "BIN Configuration Saved Successfully",
+        timer: 2000,
+        showConfirmButton: false,
+        background: "#FFFFFF",
+        color: "#1e293b",
+      });
+      if (action === "next") onNext();
+      
+      
+    }
+    catch (error) {
       const errorMessage = error.response?.data?.detail || "Save failed. Please try again.";
       Swal.fire({ icon: "error", title: "Request Error", text: errorMessage });
     } finally {
@@ -439,8 +541,30 @@ const BINConfig = ({
           </span>
         </button>
         <div className="flex gap-3">
-          {isEditMode && <button onClick={() => handleSubmit("update")} className="px-6 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors">Update</button>}
-          <button onClick={() => handleSubmit("next")} className="bg-[#6366F1] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-medium hover:bg-[#4f46e5] transition-colors">Next →</button>
+{isEditMode && (
+      <button 
+        onClick={() => handleSubmit("update")} 
+        disabled={isNextSubmitting || isUpdateSubmitting}
+        className="px-6 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+      >
+        {isUpdateSubmitting ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Updating...</span>
+          </>
+        ) : (
+          <span>Update</span>
+        )}
+      </button>
+    )}
+<button 
+      onClick={() => handleSubmit("next")} 
+      disabled={isNextSubmitting || isUpdateSubmitting}
+      className="bg-[#6366F1] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-medium hover:bg-[#4f46e5] transition-colors flex items-center gap-2 disabled:opacity-70"
+    >
+      {isNextSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+      <span>{isNextSubmitting ? "Saving..." : "Next →"}</span>
+    </button>
         </div>
       </div>
     </div>

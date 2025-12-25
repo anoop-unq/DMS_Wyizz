@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { metadataApi, campaignDiscountApi } from "../utils/metadataApi"; 
 import { Loader2 } from "lucide-react"; 
@@ -5,6 +6,9 @@ import StepHeader from "../StepReusable/Stepheader";
 import Swal from "sweetalert2";
 // Import the border helper
 import { getBorderClass } from "../utils/formStyles"; 
+
+// ✅ Base URL for images as requested
+const IMAGE_BASE_URL = "https://uat-api.marhabaqr.com/file/";
 
 const MerchantCard = ({
   merchant,
@@ -39,8 +43,22 @@ const MerchantCard = ({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#7747EE] text-white font-bold text-sm flex-shrink-0">
-            {merchant.name.charAt(0)}
+          {/* ✅ UPDATED: Added image logic with fallback to Initials placeholder */}
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#7747EE] text-white font-bold text-sm flex-shrink-0 overflow-hidden border border-gray-100">
+            {merchant.logo ? (
+              <img 
+                src={`${IMAGE_BASE_URL}${merchant.logo}`} 
+                alt={merchant.name} 
+                className="w-full h-full object-contain bg-white"
+                onError={(e) => {
+                   // Fallback if image fails to load
+                   e.target.style.display = 'none';
+                   e.target.parentElement.innerText = merchant.name.charAt(0);
+                }}
+              />
+            ) : (
+              merchant.name.charAt(0)
+            )}
           </div>
           <div className="min-w-0">
             <div className="font-medium text-sm text-gray-900 leading-tight truncate">
@@ -205,8 +223,8 @@ const CompanyBlock = ({
           ✕
         </button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      {/* Important Filter */}
+       {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
           <label className="text-[12px] text-gray-600 mb-1 block">Search Brand / ID</label>
           <input
@@ -236,7 +254,7 @@ const CompanyBlock = ({
             <button onClick={handleResetMids} className="h-[38px] px-3 border border-gray-300 rounded-md text-xs bg-white hover:bg-gray-50 text-gray-700">Reset</button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="flex justify-between text-xs text-gray-500 mb-3">
         <span>Total Brands: {merchants.length}</span>
@@ -310,7 +328,7 @@ export default function Restrictions({
             return {
               id: brand.id,
               name: brand.name,
-              logo:brand.logo,
+              logo: brand.logo, // ✅ This property is used in MerchantCard
               companyId: id, 
               mid: brand.mid || `ID: ${brand.id}`,
               category: brand.category ,
@@ -426,15 +444,24 @@ export default function Restrictions({
 
 useEffect(() => {
     if (!isLoadingData && !isFirstRun.current) {
+        // Transform the state into a readable payload for the Summary Card
         const finalPayload = Array.from(selectedMIDs).map((brandId) => {
-            const selectedTerms = perMerchantTerminals[brandId] || [];
             const merchant = allMerchants.find((m) => m.id === brandId);
+            const selectedTermIds = perMerchantTerminals[brandId] || [];
             const totalTerms = merchant?.terminals?.length || 0;
-            const isAll = totalTerms > 0 && selectedTerms.length === totalTerms;
+            const isAll = totalTerms > 0 && selectedTermIds.length === totalTerms;
+
             return {
                 brand_id: brandId,
+                brand_name: merchant?.name || "Unknown Brand", 
                 all_tids: isAll,
-                discount_tids: isAll ? [] : selectedTerms.map((tid) => ({ terminal_id: tid }))
+                discount_tids: isAll ? [] : selectedTermIds.map((tid) => {
+                    const termObj = merchant?.terminals?.find(t => t.id === tid);
+                    return {
+                        terminal_id: tid,
+                        terminal_identifier: termObj?.label || `ID: ${tid}`
+                    };
+                })
             };
         });
 
@@ -442,13 +469,12 @@ useEffect(() => {
             selectedCompanies,
             selectedMIDs: Array.from(selectedMIDs),
             perMerchantTerminals,
-            finalMidRestrictions: finalPayload
+            finalMidRestrictions: finalPayload 
         });
     }
 }, [selectedMIDs, perMerchantTerminals, selectedCompanies, allMerchants, isLoadingData]);
 
 const handleNextSubmit = async (action) => {
-  // Validation for company selection
   if (selectedCompanies.length === 0) {
     setErrors({ company: true });
     return Swal.fire({
@@ -456,6 +482,7 @@ const handleNextSubmit = async (action) => {
       title: "Selection Required",
       text: "Please select at least one company to proceed.",
       confirmButtonColor: "#7747EE",
+      background: "#FFFFFF",
     });
   }
 
@@ -478,13 +505,13 @@ const handleNextSubmit = async (action) => {
   });
 
   if (brandsMissingSelection.length > 0) {
-    Swal.fire({
+    return Swal.fire({
       icon: "warning",
       title: "Selection Required",
       text: `As per brand "${brandsMissingSelection[0]}", you need to select at least one terminal.`,
       confirmButtonColor: "#7747EE",
+      background: "#FFFFFF",
     });
-    return;
   }
 
   onUpdate({
@@ -505,17 +532,23 @@ const handleNextSubmit = async (action) => {
       const apiBody = {
         discount: { discount_mids: finalPayload }
       };
-      await campaignDiscountApi.update(campaignId, apiBody);
 
-      Swal.fire({
+      await campaignDiscountApi.update(campaignId, apiBody);
+      if (onRefresh) await onRefresh();
+
+      await Swal.fire({
         icon: "success",
-        title: "Update Successful",
-        text: "Restrictions have been saved successfully.",
-        timer: 1500,
+        title: "Success!",
+        text: action === 'update' 
+          ? "Restrictions have been updated successfully." 
+          : "Restrictions have been saved successfully.",
+        background: "#FFFFFF",
+        color: "#1e293b",
+        confirmButtonColor: "#10B981",
+        timer: 2000,
         showConfirmButton: false,
       });
-      
-      if (onRefresh) await onRefresh();
+
     } catch (err) {
       console.error("Update failed:", err);
       const errorMessage = err.response?.data?.detail || "Failed to update restrictions.";
@@ -524,6 +557,7 @@ const handleNextSubmit = async (action) => {
         title: "Error",
         text: errorMessage,
         confirmButtonColor: "#d33",
+        background: "#FFFFFF",
       });
       return; 
     } finally {
@@ -531,11 +565,11 @@ const handleNextSubmit = async (action) => {
       setIsNextSubmitting(false);
     }
   }
+
   if (action === 'next') onNext();
-}; 
+};
   
   const toggleCompany = (companyId) => {
-    // Clear error border on interaction
     setErrors({ company: false });
     setSelectedCompanies((prev) =>
       prev.includes(companyId) ? prev.filter((c) => c !== companyId) : [...prev, companyId]
@@ -619,7 +653,6 @@ const handleNextSubmit = async (action) => {
                 setCompanyOpen((s) => !s);
                 setErrors({ company: false });
               }} 
-              // Apply getBorderClass logic here
               className={`w-full flex items-center justify-between border rounded p-2 bg-white text-sm min-h-[44px] h-auto transition-all ${getBorderClass(errors.company)}`} 
               disabled={isFormDisabled}
             >
@@ -688,22 +721,42 @@ const handleNextSubmit = async (action) => {
         )}
       </div>
 
-      <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
-        <button onClick={onPrevious} disabled={isFormDisabled} className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50">
-          <span className="flex justify-center items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg> Previous</span>
-        </button>
+    <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+  <button 
+    onClick={onPrevious} 
+    disabled={isFormDisabled} 
+    className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] disabled:opacity-50"
+  >
+    <span className="flex justify-center items-center gap-2">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 18l-6-6 6-6" />
+      </svg> 
+      Previous
+    </span>
+  </button>
 
-        <div className="flex gap-3">
-          {isEditMode && (
-            <button onClick={() => handleNextSubmit('update')} disabled={isFormDisabled} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors">
-              {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} {isUpdateSubmitting ? "Updating..." : "Update"}
-            </button>
-          )}
-          <button onClick={() => handleNextSubmit('next')} disabled={isFormDisabled} className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70">
-            {isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} {isNextSubmitting ? "Saving..." : "Next →"}
-          </button>
-        </div>
-      </div>
+  <div className="flex gap-3">
+    {isEditMode && (
+      <button 
+        onClick={() => handleNextSubmit('update')} 
+        disabled={isFormDisabled} 
+        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors"
+      >
+        {isUpdateSubmitting && <Loader2 className="w-4 h-4 animate-spin" />} 
+        {isUpdateSubmitting ? "Updating..." : "Update"}
+      </button>
+    )}
+
+    <button 
+      onClick={() => handleNextSubmit('next')} 
+      disabled={isFormDisabled} 
+      className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70"
+    >
+      {isNextSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />} 
+      {isNextSubmitting ? "Saving..." : "Next →"}
+    </button>
+  </div>
+</div>
     </div>
   );
 }

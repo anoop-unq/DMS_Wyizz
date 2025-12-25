@@ -70,6 +70,49 @@ const DetailRow = ({ label, value, icon: Icon, className = "" }) => (
   </div>
 );
 
+const markdownToHtml = (markdown) => {
+  if (!markdown) return '';
+  let html = markdown;
+
+  // 1. Headers
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-gray-900">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-gray-900">$1</h1>');
+
+  // 2. Formatting
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+  html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
+
+  // 3. Links & Images
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800 transition-colors font-medium cursor-pointer">$1</a>'
+  );
+
+  // 4. Lists
+  html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
+  html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-gray-800">${match}</ul>`);
+
+  html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
+  html = html.replace(/(<li class="ol-item ml-4">.*?<\/li>\n?)+/g, (match) => {
+    const cleanedMatch = match.replaceAll('ol-item ', '');
+    return `<ol class="list-decimal list-inside my-4 space-y-1 text-gray-800">${cleanedMatch}</ol>`;
+  });
+
+  // 5. Code & Blockquotes
+  html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">$1</span>');
+  html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-gray-800 border border-gray-200 shadow-sm leading-relaxed"><code>$1</code></pre>');
+  html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600 my-6 bg-gray-50/30 rounded-r">$1</blockquote>');
+  
+  // 6. Spacing Logic
+  html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
+  html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
+  html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
+
+  return `<div class="leading-7">${html}</div>`;
+};
+
 const ListBadge = ({ items, emptyText = "-" }) => {
   if (!items || items.length === 0)
     return <span className="text-gray-400 italic text-xs">{emptyText}</span>;
@@ -1068,39 +1111,48 @@ const ViewCampaign = () => {
   )}
 </Card>
         {/* DOCUMENTS */}
-        <Card title="Documentation" icon={FileText}>
-          <ScrollableList
-            items={discountDocs}
-            emptyText="No documents attached"
-            renderItem={(doc, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 mb-2 shadow-sm"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-2.5 bg-[#F3F0FF] rounded-lg text-[#7747EE] shrink-0">
-                    <FileText size={18} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-800">
-                      {doc.doc_name}
-                    </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      {doc.doc_text}
-                    </p>
-                  </div>
-                </div>
-                <button className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-600 px-3 py-1.5 rounded transition-all font-medium shadow-sm">
-                  <Download size={13} /> View
-                </button>
-              </div>
-            )}
-          />
-        </Card>
+
+{/* ✅ DOCUMENTATION CARD - Fixed Height Layout */}
+<Card title="Documentation" icon={FileText}>
+  <div className="space-y-4">
+    {discountDocs && discountDocs.length > 0 ? (
+      discountDocs.map((doc, i) => (
+        <div
+          key={i}
+          className="flex flex-col p-5 bg-white rounded-xl border border-gray-200 shadow-sm"
+        >
+          {/* Field 1: Document Name */}
+          <div className="mb-4">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+              Document Name
+            </label>
+            <span className="inline-block bg-purple-50 text-purple-700 text-[11px] font-bold px-3 py-1 rounded-md border border-purple-100 shadow-sm">
+              {doc.doc_name || "Untitled Document"}
+            </span>
+          </div>
+
+          {/* Field 2: Document Text / Markdown Preview with 150px height */}
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+              Document Text Preview
+            </label>
+            <div
+              className="prose prose-slate max-w-none text-slate-700 bg-slate-50/50 p-4 rounded-lg border border-slate-200  overflow-y-auto hide-scroll"
+             style={{maxHeight:"300px"}} dangerouslySetInnerHTML={{ __html: markdownToHtml(doc.doc_text) }}
+            />
+          </div>
+        </div>
+      ))
+    ) : (
+      <div className="text-center py-10 text-gray-400 text-xs italic bg-gray-50 rounded-xl border border-dashed border-gray-200">
+        No documents attached.
+      </div>
+    )}
+  </div>
+</Card>
       </div>
       {/* --- 3. ACTION FOOTER (CHECKER ONLY) --- */}
-   {/* --- 3. ACTION FOOTER (CHECKER ONLY) --- */}
-     {/* --- 3. ACTION FOOTER (CHECKER ONLY) --- */}
+
       {isChecker && (
         <div className="max-w-[1400px] mx-auto px-4 pb-8">
           <div className="bg-white rounded-xl border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">

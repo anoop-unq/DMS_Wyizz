@@ -289,3 +289,17 @@ export const discountCheckerApi = {
   },
 };
 
+
+export const uploadImageApi = {
+  // Method: POST, URL: {{baseUrl}}/file
+  // We send the base64 string in the request body
+  upload: (base64Data) => {
+    return api.post(`/file`, {
+      file_data: base64Data 
+    });
+  },
+  preview: (path) => {
+    // Encodes the path to handle special characters correctly
+    return api.get(`/file/${encodeURIComponent(path)}`);
+  }
+};

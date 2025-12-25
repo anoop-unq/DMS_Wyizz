@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
 import Swal from "sweetalert2";
 import { metadataApi, campaignDiscountApi } from "../utils/metadataApi"; 
@@ -20,6 +20,7 @@ const CampaignDetails = ({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [campaignType, setCampaignType] = useState("discount");
+  const thirdPartyRef = useRef();
 
   // Budget State
   const [currency, setCurrency] = useState("");
@@ -39,6 +40,7 @@ const CampaignDetails = ({
   const [isUpdateSubmitting, setIsUpdateSubmitting] = useState(false);
   const [isNextSubmitting, setIsNextSubmitting] = useState(false);
   const isAnySubmitting = isUpdateSubmitting || isNextSubmitting;
+  
 
   const campaignTypes = [
     { label: "Discount Campaign", value: "discount" },
@@ -594,8 +596,8 @@ const handleSubmit = async (action) => {
                 <span className="absolute right-3 top-2 text-gray-400 text-xs">%</span>
             </div>
           </div>
-          <div className="mb-3">
-             <div className="flex justify-between items-center mb-1">
+         <div className="mb-3">
+            <div className="flex justify-between items-center mb-1">
                <label className="text-xs font-medium text-gray-700">Merchant Share (%) </label>
                <span className="text-[10px] text-gray-500 font-medium">Amount: {calculateAmount(merchantShare)}</span>
             </div>
@@ -611,16 +613,35 @@ const handleSubmit = async (action) => {
                 <span className="absolute right-3 top-2 text-gray-400 text-xs">%</span>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* --- THIRD PARTY SHARES (Extracted) --- */}
-      <ThirdPartyShares 
-         shares={extraShares}
-         onUpdateShares={(newShares) => { setExtraShares(newShares); updateParentState({ extraShares: newShares }); }}
-         isSubmitting={isAnySubmitting}
-         calculateAmount={calculateAmount}
-      />
+          {/* ✅ MOVED: Third Party Label and Button directly inside the Fund Share box */}
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+            <h4 className="text-sm font-semibold text-gray-800">Third Party Shares</h4>
+            <button
+              type="button"
+              onClick={() => thirdPartyRef.current?.openAddModal()} // ✅ Triggering the Ref
+              className="bg-[#7747EE] text-white text-[10px] px-3 py-1 rounded-full flex items-center gap-1 shadow-sm disabled:opacity-50"
+              disabled={isAnySubmitting}
+            >
+              <span>+</span> Add Share
+            </button>
+          </div>
+
+          {/* The List and Modal Logic */}
+      
+      </div>
+    
+     
+        </div>
+           <ThirdPartyShares 
+            ref={thirdPartyRef} // ✅ Passing the Ref
+            shares={extraShares}
+            onUpdateShares={(newShares) => { setExtraShares(newShares); updateParentState({ extraShares: newShares }); }}
+            isSubmitting={isAnySubmitting}
+            calculateAmount={calculateAmount}
+          />
+
+  
 
       {/* --- FOOTER BUTTONS --- */}
       <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-end items-center">

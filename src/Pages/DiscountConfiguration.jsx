@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Trash2, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
@@ -196,35 +197,68 @@ const DiscountConfiguration = ({
       "limitMonthly",
     ];
 
+    let hasMissingDetails = false;
     ranges.forEach((r) => {
-      // 1. Empty Check
       requiredFields.forEach((field) => {
         if (!r[field] && r[field] !== 0) {
           newErrors[`${r.id}_${field}`] = true;
           isValid = false;
+          hasMissingDetails = true;
         }
       });
+    });
 
-      // 2. Min > Max Validation (Float comparison)
-      if (r.minTxn && r.maxTxn) {
-        const min = parseFloat(r.minTxn);
-        const max = parseFloat(r.maxTxn);
-        if (min > max) {
-          newErrors[`${r.id}_minTxn`] = true;
-          newErrors[`${r.id}_maxTxn`] = true;
-          isValid = false;
-          errorMessage = "Min Txn cannot be greater than Max Txn.";
-        }
+    if (hasMissingDetails) {
+      setErrors(newErrors);
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Details",
+        text: "Please fill all required fields before proceeding.",
+        confirmButtonText: "Okay, I'll fix it",
+        background: "#FFFFFF",
+        color: "#1e293b",
+        confirmButtonColor: "#7747EE",
+      });
+      return;
+    }
+
+    // STEP 2: Logical Comparison (Only runs if no fields are empty)
+    ranges.forEach((r) => {
+      // Min vs Max Validation
+      const min = parseFloat(r.minTxn);
+      const max = parseFloat(r.maxTxn);
+      if (min > max) {
+        newErrors[`${r.id}_minTxn`] = true;
+        newErrors[`${r.id}_maxTxn`] = true;
+        isValid = false;
+        errorMessage = "Min Transaction cannot be greater than Max Transaction.";
       }
 
-      // 3. Percentage Validation (0 - 100)
-      if (r.valueType === "%" && r.value) {
+      // Percentage Validation
+      if (r.valueType === "%") {
         const val = parseFloat(r.value);
         if (val < 0 || val > 100) {
           newErrors[`${r.id}_value`] = true;
           isValid = false;
-          errorMessage = "Discount Percentage must be between 0 to 100.";
+          errorMessage = "Discount Percentage must be between 0 and 100.";
         }
+      }
+
+      // Frequency Limits Validation (Daily <= Weekly <= Monthly)
+      const daily = parseInt(r.limitDaily, 10);
+      const weekly = parseInt(r.limitWeekly, 10);
+      const monthly = parseInt(r.limitMonthly, 10);
+
+      if (daily > weekly) {
+        newErrors[`${r.id}_limitDaily`] = true;
+        newErrors[`${r.id}_limitWeekly`] = true;
+        isValid = false;
+        errorMessage = "Daily limit must be less than or equal to Weekly limit.";
+      } else if (weekly > monthly) {
+        newErrors[`${r.id}_limitWeekly`] = true;
+        newErrors[`${r.id}_limitMonthly`] = true;
+        isValid = false;
+        errorMessage = "Weekly limit must be less than or equal to Monthly limit.";
       }
     });
 
@@ -232,18 +266,18 @@ const DiscountConfiguration = ({
 
     if (!isValid) {
       Swal.fire({
-        icon: "warning",
-        title: "Missing Details",
-        confirmButtonText: "Okay, I'll fix it",
+        icon: "error",
+        title: "Invalid Input",
         text: errorMessage,
-        background: "#F7F9FB",
-        border: "1px solid #E2E8F0",
-        color: "#404041ff",
-        confirmButtonColor: "#7747EE",
+        confirmButtonText: "Fix Comparison",
+        background: "#FFFFFF",
+        color: "#1e293b",
+        confirmButtonColor: "#EF4444",
       });
       return;
     }
 
+    // --- API CALL LOGIC ---
     let shouldCallApi = true;
     if (isEditMode && action === "next") shouldCallApi = false;
 
@@ -261,32 +295,34 @@ const DiscountConfiguration = ({
         const payload = { discount: { discount_amounts: formattedAmounts } };
         await campaignDiscountApi.update(campaignId, payload);
 
-        if (action === "update") {
-          if (onRefresh) await onRefresh();
+        if (onRefresh) await onRefresh();
 
-          // ✅ Success Swal for Update
-          Swal.fire({
-            icon: "success",
-            title: "Updated!",
-            text: "Discount configuration updated successfully.",
-            background: "#00201E",
-            color: "#f1f5f9",
-            confirmButtonColor: "#F3C27F",
-            timer: 2000,
-          });
-        }
+        // ✅ MOVE SWAL HERE: Trigger for BOTH 'update' and 'next' (in create mode)
+        await Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: action === "update" 
+            ? "Discount configuration updated successfully." 
+            : "Discount configuration saved successfully.",
+          background: "#FFFFFF",
+          color: "#1e293b",
+          confirmButtonColor: "#10B981",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       }
+
       if (action === "next") onNext();
+
     } catch (error) {
-      const errorMsg =
-        error.response?.data?.message || error.message || "Unknown error";
+      const errorMsg = error.response?.data?.detail || error.message || "Unknown error";
       Swal.fire({
         icon: "error",
         title: "Error",
         text: `Failed to save: ${errorMsg}`,
-        background: "#00201E",
-        color: "#f1f5f9",
-        confirmButtonColor: "#F3C27F",
+        background: "#FFFFFF",
+        color: "#1e293b",
+        confirmButtonColor: "#EF4444",
       });
     } finally {
       setIsUpdateSubmitting(false);
@@ -297,8 +333,6 @@ const DiscountConfiguration = ({
   const fmt = (v) => (v === "" || v == null ? "—" : String(v));
   const isFormDisabled = isAnySubmitting;
 
-  // Helper to get border class based on error state
-  // ✅ Uses orange border for errors
   const getBorderClass = (id, field) => {
     return errors[`${id}_${field}`]
       ? "border-orange-500 focus:ring-orange-500 focus:border-orange-500"
@@ -307,10 +341,8 @@ const DiscountConfiguration = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-      {/* Header */}
       <StepHeader step={3} totalSteps={9} title="Discount Configuration" />
 
-      {/* Main Content Area */}
       <div className="bg-[#F7F9FB] border border-gray-100 rounded p-4 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm font-medium">Amount Ranges</div>
@@ -325,7 +357,6 @@ const DiscountConfiguration = ({
           </div>
         </div>
 
-        {/* Grid Layout */}
         <div className="grid grid-cols-1 gap-3 overflow-y-auto hide-scroll pr-1 max-h-[210px] md:max-h-[220px] lg:max-h-[265px]">
           {ranges.map((r, idx) => (
             <div
@@ -333,16 +364,13 @@ const DiscountConfiguration = ({
               className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3">
-                {/* 1. Number */}
                 <div className="flex-shrink-0 self-center">
                   <span className="w-6 h-6 inline-flex items-center justify-center rounded-full bg-[#7747EE] text-[#FFFFFF] font-medium text-xs shadow-sm">
                     {idx + 1}
                   </span>
                 </div>
 
-                {/* 2. Inputs Grid */}
                 <div className="flex-grow grid grid-cols-12 gap-3 items-center">
-                  {/* Min Txn */}
                   <div className="col-span-6 lg:col-span-2">
                     <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
                       Min Txn *
@@ -364,7 +392,6 @@ const DiscountConfiguration = ({
                     />
                   </div>
 
-                  {/* Max Txn */}
                   <div className="col-span-6 lg:col-span-2">
                     <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
                       Max Txn *
@@ -386,7 +413,6 @@ const DiscountConfiguration = ({
                     />
                   </div>
 
-                  {/* Value */}
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3">
                     <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
                       Value *
@@ -434,7 +460,6 @@ const DiscountConfiguration = ({
                     </div>
                   </div>
 
-                  {/* Usage Limits */}
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3">
                     <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
                       Limits (D/W/M) *
@@ -478,11 +503,7 @@ const DiscountConfiguration = ({
                         value={r.limitMonthly}
                         placeholder="M"
                         onChange={(e) =>
-                          handleInputChange(
-                            r.id,
-                            "limitMonthly",
-                            e.target.value
-                          )
+                          handleInputChange(r.id, "limitMonthly", e.target.value)
                         }
                         onFocus={() => handleInputFocus(r.id, "limitMonthly")}
                         className={`w-full border rounded px-1 py-1.5 text-sm focus:outline-none focus:ring-1 text-center disabled:bg-gray-50 ${getBorderClass(
@@ -495,7 +516,6 @@ const DiscountConfiguration = ({
                     </div>
                   </div>
 
-                  {/* Cap */}
                   <div className="col-span-6 sm:col-span-3 lg:col-span-1">
                     <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
                       Cap *
@@ -517,7 +537,6 @@ const DiscountConfiguration = ({
                     />
                   </div>
 
-                  {/* Tax */}
                   <div className="col-span-6 sm:col-span-3 lg:col-span-1">
                     <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">
                       Tax% *
@@ -540,7 +559,6 @@ const DiscountConfiguration = ({
                   </div>
                 </div>
 
-                {/* 3. Delete Button */}
                 <div className="flex-shrink-0 self-center">
                   <button
                     onClick={() => removeRange(r.id)}
@@ -557,7 +575,6 @@ const DiscountConfiguration = ({
         </div>
       </div>
 
-      {/* Preview Section */}
       <div
         className="bg-[#F7F9FB] overflow-y-auto hide-scroll border border-gray-100 rounded p-4 mb-4"
         style={{ maxHeight: "150px" }}
@@ -601,17 +618,17 @@ const DiscountConfiguration = ({
                       )}
                       {r.limitDaily && (
                         <span className="bg-gray-100 px-1 rounded">
-                          D: {r.limitDaily}
+                          Daily: {r.limitDaily}
                         </span>
                       )}
                       {r.limitWeekly && (
                         <span className="bg-gray-100 px-1 rounded">
-                          W: {r.limitWeekly}
+                          Weekly: {r.limitWeekly}
                         </span>
                       )}
                       {r.limitMonthly && (
                         <span className="bg-gray-100 px-1 rounded">
-                          M: {r.limitMonthly}
+                          Monthly: {r.limitMonthly}
                         </span>
                       )}
                     </div>
@@ -623,9 +640,7 @@ const DiscountConfiguration = ({
         </div>
       </div>
 
-      {/* Footer */}
       <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
-        {/* PREVIOUS BUTTON */}
         <button
           onClick={onPrevious}
           disabled={isFormDisabled}
@@ -648,40 +663,30 @@ const DiscountConfiguration = ({
           </span>
         </button>
 
-        <div className="flex gap-3">
-          {/* UPDATE BUTTON (Edit Mode Only) */}
+     <div className="flex gap-3">
+          {/* UPDATE BUTTON WITH SPIN */}
           {isEditMode && (
             <button
               onClick={() => handleSubmit("update")}
-              disabled={isFormDisabled}
+              disabled={isAnySubmitting}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-2 disabled:opacity-70 transition-colors"
             >
-              {isUpdateSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : null}
+              {isUpdateSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {isUpdateSubmitting ? "Updating..." : "Update"}
             </button>
           )}
 
-          {/* NEXT BUTTON */}
+          {/* NEXT BUTTON WITH SPIN */}
           <button
             onClick={() => handleSubmit("next")}
-            disabled={isFormDisabled || isLoadingData}
+            disabled={isAnySubmitting || isLoadingData}
             className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center disabled:opacity-70"
           >
-            {isNextSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : null}
+            {isNextSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             {isNextSubmitting ? "Saving..." : "Next →"}
           </button>
         </div>
       </div>
-
-      {/* {isAnySubmitting && (
-                <div className="fixed inset-0 bg-white/50 z-50 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#7747EE]" />
-                </div>
-            )} */}
     </div>
   );
 };

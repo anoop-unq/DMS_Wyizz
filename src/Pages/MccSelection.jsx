@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import Pagination from "../Components/Pagination";
 import { metadataApi, campaignDiscountApi } from "../utils/metadataApi";
 import StepHeader from "../StepReusable/Stepheader";
+import Swal from "sweetalert2"; // Added SweetAlert2
 
 export default function MCCSelection({
   data,
@@ -93,73 +94,116 @@ export default function MCCSelection({
     initData();
   }, [isEditMode, campaignId]);
 
-  // ------------------------------------------------------------------
-  // 3. Handle Toggle
-  // ------------------------------------------------------------------
-  const toggleSelection = (mcc) => {
-    let newSelectedIds;
-    if (selectedMccIds.includes(mcc.id)) {
-      newSelectedIds = selectedMccIds.filter((id) => id !== mcc.id);
-    } else {
-      newSelectedIds = [...selectedMccIds, mcc.id];
-    }
 
-    setSelectedMccIds(newSelectedIds);
 
-    // Format for payload AND for Final Summary
-    const payloadFormat = newSelectedIds.map((id) => ({
-      mcc_id: id,
-      mcc_group_id: null,
-    }));
+//   const toggleSelection = (mcc) => {
+//   let newSelectedIds;
+//   if (selectedMccIds.includes(mcc.id)) {
+//     newSelectedIds = selectedMccIds.filter((id) => id !== mcc.id);
+//   } else {
+//     newSelectedIds = [...selectedMccIds, mcc.id];
+//   }
 
-    onUpdate({ discount_mccs: payloadFormat });
-  };
+//   setSelectedMccIds(newSelectedIds);
+
+//   // ENHANCED PAYLOAD: 
+//   // We include the 'mcc_code' from the 'mcc' object so the Summary page has it
+//   const payloadFormat = newSelectedIds.map((id) => {
+//     // Find the full MCC object from our list to get its display code
+//     const fullMcc = mccList.find(item => item.id === id);
+//     return {
+//       mcc_id: id,
+//       mcc_code: fullMcc ? fullMcc.code : null, // This is what the Summary needs
+//       mcc_group_id: null,
+//     };
+//   });
+
+//   onUpdate({ discount_mccs: payloadFormat });
+// };
 
   // ------------------------------------------------------------------
   // 4. Handle Submit (Logic modified as per request)
   // ------------------------------------------------------------------
+ 
+
+  const toggleSelection = (mcc) => {
+  let newSelectedIds;
+  if (selectedMccIds.includes(mcc.id)) {
+    newSelectedIds = selectedMccIds.filter((id) => id !== mcc.id);
+  } else {
+    newSelectedIds = [...selectedMccIds, mcc.id];
+  }
+
+  setSelectedMccIds(newSelectedIds);
+
+  // Prepare the "Display Version" for the Summary Props
+  const summaryFormat = newSelectedIds.map((id) => {
+    const fullMcc = mccList.find(item => item.id === id);
+    return {
+      mcc_id: id,
+      mcc_code: fullMcc ? fullMcc.code : "...", // For UI Display
+      mcc_group_id: null,
+    };
+  });
+
+  // This updates the Summary Card
+  onUpdate({ discount_mccs: summaryFormat });
+};
+ 
   const handleSubmit = async (action) => {
     // 1. Set specific loading state
-    if (action === "update") setIsUpdateSubmitting(true);
-    else setIsNextSubmitting(true);
+    const shouldCallApi = action === "update" || (!isEditMode && action === "next");
+
+    if (shouldCallApi) {
+      if (action === "update") setIsUpdateSubmitting(true);
+      else setIsNextSubmitting(true);
+    }
 
     try {
       // 2. Prepare Payload
-      const formattedMccs = selectedMccIds.map((id) => ({
+      const summaryFormat = selectedMccIds.map((id) => {
+      const fullMcc = mccList.find(item => item.id === id);
+      return {
         mcc_id: id,
+        mcc_code: fullMcc ? fullMcc.code : null,
         mcc_group_id: null,
-      }));
+      };
+      });
 
-      // Update parent one last time to ensure state is fresh
-      onUpdate({ discount_mccs: formattedMccs });
+      // Update parent state
+   onUpdate({ discount_mccs: summaryFormat });
 
+    if (shouldCallApi) {
+      if (!campaignId) throw new Error("Missing Campaign ID");
+
+      // 2. Prepare CLEAN API Payload (Only IDs as per your JSON)
       const apiBody = {
         discount: {
-          discount_mccs: formattedMccs,
+          discount_mccs: selectedMccIds.map((id) => ({
+            mcc_id: id,
+            mcc_group_id: null,
+          })),
         },
       };
 
-      // 3. Determine if we need to call the API
-      // - If clicking "Update" -> ALWAYS Call API
-      // - If clicking "Next" AND NOT in Edit Mode -> Call API (to save draft)
-      // - If clicking "Next" AND IN Edit Mode -> DO NOT Call API (just nav)
-      const shouldCallApi =
-        action === "update" || (!isEditMode && action === "next");
-
-      if (shouldCallApi) {
-        if (!campaignId) throw new Error("Missing Campaign ID");
-
-        console.log(
-          `📤 PUT Payload to ID ${campaignId}:`,
-          JSON.stringify(apiBody, null, 2)
-        );
+        // API Call
         await campaignDiscountApi.update(campaignId, apiBody);
 
-        if (action === "update") {
-          if (onRefresh) await onRefresh();
-          console.log("✅ Step 6 Updated");
-          // You can add a toast success message here
-        }
+        // ✅ Success Alert with dynamic text
+        await Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: action === "update" 
+            ? "MCC restrictions updated successfully." 
+            : "MCC restrictions saved successfully.",
+          background: "#FFFFFF",
+          color: "#1e293b",
+          confirmButtonColor: "#10B981",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        if (onRefresh) await onRefresh();
       }
 
       // 4. Handle Navigation
@@ -168,7 +212,12 @@ export default function MCCSelection({
       }
     } catch (error) {
       console.error("❌ Error saving MCC configuration:", error);
-      alert("Failed to save configuration.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to save MCC configuration.",
+        background: "#FFFFFF",
+      });
     } finally {
       setIsUpdateSubmitting(false);
       setIsNextSubmitting(false);
@@ -197,6 +246,12 @@ export default function MCCSelection({
         {/* Header */}
 
       <StepHeader step={6} totalSteps={9} title="MCC Selection" />
+      <div className="flex justify-end -mt-2 mb-4">
+           <div className="bg-purple-50 border border-purple-100 px-3 py-1 rounded-[5px] text-[12px] font-medium text-purple-700 shadow-sm whitespace-nowrap">
+        {selectedMccIds.length} MCCs Selected
+      </div>
+      </div>
+
 
         {/* LOADING GRID */}
 
@@ -347,59 +402,43 @@ export default function MCCSelection({
           </div>
         )}
 
-             <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
-    
-    {/* PREVIOUS BUTTON */}
-    <button
-      onClick={onPrevious}
-      disabled={isAnySubmitting}
-      className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] flex items-center gap-2 disabled:opacity-50 hover:bg-gray-50 transition-colors"
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#000000"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M15 18l-6-6 6-6" />
-      </svg>
-      Previous
-    </button>
+   <div className="mt-6 border-t border-[#E2E8F0] pt-4 flex justify-between items-center">
+  {/* PREVIOUS BUTTON */}
+  <button
+    onClick={onPrevious}
+    disabled={isAnySubmitting}
+    className="bg-white border border-[#E2E8F0] rounded-[5px] px-6 py-[5px] text-[#000000] text-[14px] font-normal tracking-[-0.03em] flex items-center gap-2 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+    Previous
+  </button>
 
-    <div className="flex gap-3 items-center">
-      
-      {/* SELECTION BADGE */}
-      <div className="bg-purple-50 border border-purple-100 px-3 py-1 rounded-[5px] text-[12px] font-medium text-purple-700 shadow-sm whitespace-nowrap">
-        {selectedMccIds.length} MCCs Selected
-      </div>
-
-      {/* UPDATE BUTTON (Edit Mode Only) */}
-      {isEditMode && (
-        <button
-          onClick={() => handleSubmit("update")}
-          disabled={isAnySubmitting}
-          className="px-4 py-[5px] bg-green-600 hover:bg-green-700 text-white rounded-[5px] text-[14px] font-normal tracking-[-0.03em] flex items-center gap-2 disabled:opacity-70 transition-colors"
-        >
-          {isUpdateSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {isUpdateSubmitting ? "Updating..." : "Update"}
-        </button>
-      )}
-
-      {/* NEXT BUTTON */}
+  <div className="flex gap-3 items-center">
+    {/* UPDATE BUTTON (Edit Mode Only) */}
+    {isEditMode && (
       <button
-        onClick={() => handleSubmit("next")}
-        disabled={isAnySubmitting || loadingMccs}
-        className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center hover:bg-[#5558dd] transition-colors disabled:opacity-70"
+        onClick={() => handleSubmit("update")}
+        disabled={isAnySubmitting}
+        className="px-4 py-[5px] bg-green-600 hover:bg-green-700 text-white rounded-[5px] text-[14px] font-normal tracking-[-0.03em] flex items-center gap-2 disabled:opacity-70 transition-colors"
       >
-        {isNextSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-        {isNextSubmitting ? "Saving..." : "Next →"}
+        {isUpdateSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+        {isUpdateSubmitting ? "Updating..." : "Update"}
       </button>
-    </div>
+    )}
+
+    {/* NEXT BUTTON WITH SPIN */}
+    <button
+      onClick={() => handleSubmit("next")}
+      disabled={isAnySubmitting || loadingMccs}
+      className="bg-[#6366F1] border border-[#E2E8F0] rounded-[5px] px-8 py-[5px] text-[#ffffff] text-[14px] font-normal tracking-[-0.03em] flex items-center justify-center hover:bg-[#5558dd] transition-colors disabled:opacity-70"
+    >
+      {isNextSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+      {isNextSubmitting ? "Saving..." : "Next →"}
+    </button>
   </div>
+</div>
       </div>
 
     
@@ -421,12 +460,6 @@ export default function MCCSelection({
   </div>
 </div>
 
-      {/* Loading Overlay */}
-      {isAnySubmitting && (
-        <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#7B3FE4]" />
-        </div>
-      )}
     </div>
   );
 }
