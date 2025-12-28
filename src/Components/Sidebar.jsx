@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { AiOutlineClose } from "react-icons/ai";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Home,
+  // Home,
   BarChart3,
   Warehouse,
   UserCheck,
@@ -29,7 +29,7 @@ export default function Sidebar({ sidebarToggle, setSidebarToggle, isMobile, use
       {
         title: "MAIN",
         links: [
-          { to: "/", icon: <Home size={20} />, label: "Home" },
+          // { to: "/", icon: <Home size={20} />, label: "Home" },
           { to: "/dashboard", icon: <BarChart3 size={20} />, label: "Dashboard" },
         ],
       },

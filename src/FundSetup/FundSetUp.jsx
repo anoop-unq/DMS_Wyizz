@@ -20,11 +20,13 @@ import {
 import { Settings, Loader2 } from "lucide-react";
 
 import StepHeader from "../StepReusable/Stepheader";
+import { assets } from "../assets/assets";
 
 const FundSetup = ({
   data,
 
   campaignDatesFromProps,
+  onMainDateUpdate,
 
   onUpdate,
 
@@ -304,52 +306,177 @@ const FundSetup = ({
     setEditingPattern(null);
   };
 
-  const handleDateClick = (date) => {
-    if (!mainStartDate || !mainEndDate) {
-      alert("Please set campaign dates in Step 1 first");
+  // const handleDateClick = (date) => {
+  //   if (!mainStartDate || !mainEndDate) {
+  //     alert("Please set campaign dates in Step 1 first");
 
-      return;
-    }
+  //     return;
+  //   }
 
-    const dateStr = getLocalYYYYMMDD(date);
+  //   const dateStr = getLocalYYYYMMDD(date);
 
-    const isSpecific = specificDateConfigs.some((c) => c.date === dateStr);
+  //   const isSpecific = specificDateConfigs.some((c) => c.date === dateStr);
 
-    const isPatternCovered = patternConfigs.some(
-      (c) => dateStr >= c.startDate && dateStr <= c.endDate
-    );
+  //   const isPatternCovered = patternConfigs.some(
+  //     (c) => dateStr >= c.startDate && dateStr <= c.endDate
+  //   );
 
-    if (isSpecific || !isPatternCovered) {
-      setSelectedDateForConfig(date);
+  //   if (isSpecific || !isPatternCovered) {
+  //     setSelectedDateForConfig(date);
 
-      setActiveModal("specific");
-    }
-  };
+  //     setActiveModal("specific");
+  //   }
+  // };
 
-  const handleSaveSpecificDate = (slots) => {
-    const dateStr = getLocalYYYYMMDD(selectedDateForConfig);
 
-    setSpecificDateConfigs((prev) => {
-      const cleanConfigs = prev.filter((c) => c.date !== dateStr);
+//   const handleDateClick = (date) => {
+//   if (!mainStartDate || !mainEndDate) {
+//     Swal.fire({
+//       icon: "info",
+//       title: "Dates Required",
+//       text: "Please set campaign dates in Step 1 first",
+//       confirmButtonColor: "#7747EE",
+//     });
+//     return;
+//   }
 
-      if (slots.length > 0) {
-        cleanConfigs.push({
-          id: `specific_${Date.now()}`,
+//   const dateStr = getLocalYYYYMMDD(date);
+  
+//   // 1. Check if this date already has a 'Specific Date' configuration
+//   const isSpecific = specificDateConfigs.some((c) => c.date === dateStr);
 
-          date: dateStr,
+//   // 2. Check if this specific day is actually covered by a pattern (matching the day of week)
+//   // We use your existing getSlotsForDate logic to see if a 'pattern' type slot exists for THIS day
+//   const slotsForThisDay = getSlotsForDate(date);
+//   const isPatternDay = slotsForThisDay.some(slot => slot.type === "pattern");
 
-          timeSlots: slots,
-        });
-      }
+//   /**
+//    * LOGIC:
+//    * - If it's already a Specific Date: Allow clicking (to edit/remove it).
+//    * - If it's NOT a Pattern Day (e.g. it's a Monday and your pattern is only Sundays): Allow clicking.
+//    * - If it IS a Pattern Day: Restrict clicking (it's already covered by the pattern model).
+//    */
+//   if (isSpecific || !isPatternDay) {
+//     setSelectedDateForConfig(date);
+//     setActiveModal("specific");
+//   } else {
+//     // Optional: Inform the user why they can't click it
+//     console.log("This date is already covered by a recurring pattern.");
+//   }
+// };
 
-      return cleanConfigs;
+const handleDateClick = (date) => {
+  if (!mainStartDate || !mainEndDate) {
+    Swal.fire({
+      icon: "info",
+      title: "Dates Required",
+      text: "Please set campaign dates in Step 1 first",
+      confirmButtonColor: "#7747EE",
     });
+    return;
+  }
 
-    setActiveModal(null);
+  const dateStr = getLocalYYYYMMDD(date);
+  const dayOfWeek = date.getDay();
+  const slots = getSlotsForDate(date);
 
-    setSelectedDateForConfig(null);
-  };
+  // 1. Check for Specific Date config first (highest priority)
+  const specificConfig = specificDateConfigs.find((c) => c.date === dateStr);
+  if (specificConfig) {
+    setSelectedDateForConfig(date);
+    setActiveModal("specific");
+    return;
+  }
 
+  // 2. Check if this date is covered by an existing Pattern
+  const matchingPattern = patternConfigs.find((c) => {
+    const isInRange = dateStr >= c.startDate && dateStr <= c.endDate;
+    if (!isInRange) return false;
+    if (c.type === "range" || c.pattern === "custom_range") return true;
+
+    const patternChecks = {
+      all_sundays: dayOfWeek === 0,
+      all_mondays: dayOfWeek === 1,
+      all_tuesdays: dayOfWeek === 2,
+      all_wednesdays: dayOfWeek === 3,
+      all_thursdays: dayOfWeek === 4,
+      all_fridays: dayOfWeek === 5,
+      all_saturdays: dayOfWeek === 6,
+      all_weekends: dayOfWeek === 0 || dayOfWeek === 6,
+      all_weekdays: dayOfWeek >= 1 && dayOfWeek <= 5,
+    };
+    return patternChecks[c.pattern] || false;
+  });
+
+  if (slots.length > 0) {
+    setSelectedDateForView(date); 
+  } else {
+    // If it's empty, allow adding a new Specific Date restriction
+    setSelectedDateForConfig(date);
+    setActiveModal("specific");
+  }
+
+  if (matchingPattern) {
+    // ✅ Instead of blocking, we open the Pattern Modal to edit the recurring rule
+    setEditingPattern(matchingPattern);
+    setActiveModal("pattern");
+  } else {
+    // 3. No configuration exists at all: Open Specific Date Modal for a fresh entry
+    setSelectedDateForConfig(date);
+    setActiveModal("specific");
+  }
+};
+
+  // const handleSaveSpecificDate = (slots) => {
+  //   const dateStr = getLocalYYYYMMDD(selectedDateForConfig);
+
+  //   setSpecificDateConfigs((prev) => {
+  //     const cleanConfigs = prev.filter((c) => c.date !== dateStr);
+
+  //     if (slots.length > 0) {
+  //       cleanConfigs.push({
+  //         id: `specific_${Date.now()}`,
+
+  //         date: dateStr,
+
+  //         timeSlots: slots,
+  //       });
+  //     }
+
+  //     return cleanConfigs;
+  //   });
+
+  //   setActiveModal(null);
+
+  //   setSelectedDateForConfig(null);
+  // };
+
+  // Inside FundSetup.js
+
+const handleSaveSpecificDate = (slots) => {
+  const dateStr = getLocalYYYYMMDD(selectedDateForConfig);
+
+  setSpecificDateConfigs((prev) => {
+    // Remove any existing config for this date
+    const otherConfigs = prev.filter((c) => c.date !== dateStr);
+
+    // ✅ ALWAYS push the new config, even if slots.length is 0
+    // This represents the "All Day" state
+    return [
+      ...otherConfigs,
+      {
+        id: `specific_${Date.now()}`,
+        date: dateStr,
+        timeSlots: slots, // This will be [] for All Day
+      },
+    ];
+  });
+
+  setActiveModal(null);
+  setSelectedDateForConfig(null);
+};
+
+  
   const handleClearSpecificDate = () => {
     const dateStr = getLocalYYYYMMDD(selectedDateForConfig);
 
@@ -358,6 +485,20 @@ const FundSetup = ({
     setActiveModal(null);
 
     setSelectedDateForConfig(null);
+  };
+
+  const handleMainStartDateChange = (val) => {
+    setMainStartDate(val);
+    if (onMainDateUpdate) {
+      onMainDateUpdate({ startDate: val }); // Updates Step 1 state in Parent
+    }
+  };
+
+  const handleMainEndDateChange = (val) => {
+    setMainEndDate(val);
+    if (onMainDateUpdate) {
+      onMainDateUpdate({ endDate: val }); // Updates Step 1 state in Parent
+    }
   };
 
   // ✅ NEW: Handle Remove (Calls API immediately if ID exists)
@@ -388,6 +529,7 @@ const FundSetup = ({
         console.log(
           `🗑️ Removing rule. Calling PUT on Discount ID: ${actualDiscountId}`
         );
+        console.log(payload,"Payload")
 
         await campaignDiscountApi.update(campaignId, payload); // Use campaignId wrapper
       } catch (error) {
@@ -549,9 +691,10 @@ const FundSetup = ({
             : "Time restrictions saved successfully.",
           background: "#FFFFFF",
           color: "#1e293b",
-          confirmButtonColor: "#10B981",
           timer: 2000,
-          showConfirmButton: false,
+            showConfirmButton: true, // Enables the confirmation button
+          confirmButtonText: "OK", // Custom text for the button
+          confirmButtonColor: "#6366F1",
         });
 
         if (onRefresh) await onRefresh();
@@ -646,49 +789,48 @@ const FundSetup = ({
 
       {/* Date Controls */}
 
-      {mainStartDate && mainEndDate && (
-        <div className="flex flex-col md:flex-row gap-6 mb-8 items-end bg-[#F8F9FC] p-4 rounded-xl border border-gray-100">
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-              Campaign Start Date
-            </label>
-
-            <input
-              type="text"
-              value={formatDisplayDate(mainStartDate)}
-              readOnly
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-            />
-
-            <p className="text-xs text-gray-500 mt-1">Set in Step 1</p>
-          </div>
-
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-              Campaign End Date
-            </label>
-
-            <input
-              type="text"
-              value={formatDisplayDate(mainEndDate)}
-              readOnly
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-            />
-
-            <p className="text-xs text-gray-500 mt-1">Set in Step 1</p>
-          </div>
-
-          <div>
-            <button
-              onClick={() => openAddPatternModal()}
-              className="h-[42px] px-5 bg-white border border-[#7747EE] text-[#7747EE] rounded-lg text-sm font-medium hover:bg-[#F4F2FF] transition-colors flex items-center gap-2 shadow-sm"
-              disabled={!mainStartDate || !mainEndDate}
-            >
-              <Settings className="w-4 h-4" /> Add Restriction
-            </button>
-          </div>
+      <div className="flex flex-col md:flex-row gap-6 mb-8 items-end bg-[#F8F9FC] p-4 rounded-xl border border-gray-100">
+        <div className="flex-1 w-full">
+          <label className="flex gap-1 block text-xs font-medium text-gray-700 mb-1.5">
+            <img src={assets.CalendarLogo} className="w-3.5 h-3.5" alt="" />
+           Start Date
+          </label>
+          <input
+            type="date" // ✅ Interactive now
+            value={mainStartDate}
+            onChange={(e) => handleMainStartDateChange(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-1 focus:ring-[#7747EE] focus:border-[#7747EE]"
+          />
+          {/* <p className="text-[10px] text-indigo-500 mt-1 font-medium">Linked to Step 1</p> */}
         </div>
-      )}
+
+        <div className="flex-1 w-full">
+          <label className="flex gap-1 block text-xs font-medium text-gray-700 mb-1.5">
+            <img src={assets.CalendarLogo} className="w-3.5 h-3.5" alt="" />
+            End Date
+          </label>
+          <input
+            type="date" // ✅ Interactive now
+            value={mainEndDate}
+            onChange={(e) => handleMainEndDateChange(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-1 focus:ring-[#7747EE] focus:border-[#7747EE]"
+          />
+          {/* <p className="text-[10px] text-indigo-500 mt-1 font-medium">Linked to Step 1</p> */}
+        </div>
+
+        <div>
+          <button
+            onClick={() => openAddPatternModal()}
+            className="h-[40px] px-5 bg-white border border-[#7747EE] text-[#7747EE] rounded-lg text-sm font-medium hover:bg-[#F4F2FF] transition-colors flex items-center gap-2 shadow-sm"
+            disabled={!mainStartDate || !mainEndDate}
+          >
+            <Settings className="w-4 h-4" /> Add Restriction
+          </button>
+        </div>
+       
+      </div>
+
+ 
 
       {/* Active Restrictions */}
 

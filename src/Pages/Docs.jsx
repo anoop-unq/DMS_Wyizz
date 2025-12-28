@@ -796,6 +796,9 @@
 // };
 
 // export default Docs;
+
+
+
 import React, { useState, useEffect } from "react";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
@@ -984,9 +987,11 @@ const Docs = ({
               : "Documents have been saved successfully.",
           background: "#FFFFFF",
           color: "#1e293b",
-          confirmButtonColor: "#10B981",
+         
           timer: 2000,
-          showConfirmButton: false,
+            showConfirmButton: true, // Enables the confirmation button
+          confirmButtonText: "OK", // Custom text for the button
+          confirmButtonColor: "#6366F1",
         });
 
         if (onRefresh) await onRefresh();

@@ -108,10 +108,10 @@ const PatternModal = ({
       const existingStart = existingConfig.startDate;
       const existingEnd = existingConfig.endDate;
 
-      if (isRangeOverlap(startDate, endDate, existingStart, existingEnd)) {
-        alert(`The selected date range overlaps with an existing restriction. Please adjust the range.`);
-        return;
-      }
+      // if (isRangeOverlap(startDate, endDate)) {
+      //   alert(`The selected date range overlaps with an existing restriction. Please adjust the range.`);
+      //   return;
+      // }
     }
 
     // Save

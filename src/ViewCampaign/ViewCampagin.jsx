@@ -70,27 +70,82 @@ const DetailRow = ({ label, value, icon: Icon, className = "" }) => (
   </div>
 );
 
+// const markdownToHtml = (markdown) => {
+//   if (!markdown) return '';
+//   let html = markdown;
+
+//   // 1. Headers
+//   html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
+//   html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-gray-900">$1</h2>');
+//   html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-gray-900">$1</h1>');
+
+//   // 2. Formatting
+//   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+//   html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+//   html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
+
+//   // 3. Links & Images
+//   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
+//   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+//     '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800 transition-colors font-medium cursor-pointer">$1</a>'
+//   );
+
+//   // 4. Lists
+//   html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
+//   html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-gray-800">${match}</ul>`);
+
+//   html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
+//   html = html.replace(/(<li class="ol-item ml-4">.*?<\/li>\n?)+/g, (match) => {
+//     const cleanedMatch = match.replaceAll('ol-item ', '');
+//     return `<ol class="list-decimal list-inside my-4 space-y-1 text-gray-800">${cleanedMatch}</ol>`;
+//   });
+
+//   // 5. Code & Blockquotes
+//   html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">$1</span>');
+//   html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-gray-800 border border-gray-200 shadow-sm leading-relaxed"><code>$1</code></pre>');
+//   html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600 my-6 bg-gray-50/30 rounded-r">$1</blockquote>');
+  
+//   // 6. Spacing Logic
+//   html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
+//   html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
+//   html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
+
+//   return `<div class="leading-7">${html}</div>`;
+// };
+
+
 const markdownToHtml = (markdown) => {
   if (!markdown) return '';
-  let html = markdown;
+  
+  // 1. TYPOGRAPHY & ENCODING CLEANER
+  let html = markdown
+    // Remove the specific "OBJ" box character (\uFFFC)
+    .replace(/\uFFFC/g, '')
+    // Fix mangled apostrophes (the "donâ...t" issue)
+    // This replaces the "â" and any following corrupted boxes with a standard apostrophe
+    .replace(/â[\s\uFFFC\u0080-\u009F]{1,3}/g, "'")
+    // Replace Non-Breaking Spaces with normal spaces
+    .replace(/\u00A0/g, ' ')
+    // Remove other hidden control characters
+    .replace(/[\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, '');
 
-  // 1. Headers
+  // 2. Headers
   html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
   html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-gray-900">$1</h2>');
   html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-gray-900">$1</h1>');
 
-  // 2. Formatting
+  // 3. Formatting
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
   html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
   html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
 
-  // 3. Links & Images
+  // 4. Links & Images
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
     '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800 transition-colors font-medium cursor-pointer">$1</a>'
   );
 
-  // 4. Lists
+  // 5. Lists
   html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
   html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-gray-800">${match}</ul>`);
 
@@ -100,12 +155,12 @@ const markdownToHtml = (markdown) => {
     return `<ol class="list-decimal list-inside my-4 space-y-1 text-gray-800">${cleanedMatch}</ol>`;
   });
 
-  // 5. Code & Blockquotes
+  // 6. Code & Blockquotes
   html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">$1</span>');
   html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-gray-800 border border-gray-200 shadow-sm leading-relaxed"><code>$1</code></pre>');
   html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600 my-6 bg-gray-50/30 rounded-r">$1</blockquote>');
   
-  // 6. Spacing Logic
+  // 7. Spacing Logic
   html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
   html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
   html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
@@ -616,53 +671,63 @@ const ViewCampaign = () => {
               />
 
               {/* TIME SCHEDULE */}
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">
-                  Time Schedule
-                </p>
-                {timeRules.length > 0 ? (
-                  <div
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto pr-1 hide-scroll"
-                    style={{ maxHeight: "175px" }}
-                  >
-                    {timeRules.map((d, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-col justify-between text-xs bg-[#F0F9FF] border border-[#E0F2FE] px-3 py-2.5 rounded-lg gap-2"
-                      >
-                        <div className="flex items-center gap-2 text-sky-800 font-semibold">
-                          <Calendar
-                            size={12}
-                            className="text-sky-500 shrink-0"
-                          />
-                          <span className="truncate">
-                            {formatDate(d.start_date)} —{" "}
-                            {formatDate(d.end_date)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-sky-600 bg-white px-2 py-0.5 rounded border border-sky-100 self-start">
-                          <Clock size={11} className="shrink-0" />
-                          <span className="font-mono text-[11px] whitespace-nowrap">
-                            {d.discount_times?.length > 0
-                              ? `${d.discount_times[0].start_time.slice(
-                                  0,
-                                  5
-                                )} - ${d.discount_times[0].end_time.slice(
-                                  0,
-                                  5
-                                )}`
-                              : ""}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-sm text-gray-900 font-semibold">
-                    No discount date selected
-                  </span>
-                )}
-              </div>
+           <div>
+  <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">
+    Time Schedule
+  </p>
+  {timeRules.length > 0 ? (
+    <div
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto pr-1 hide-scroll"
+      style={{ maxHeight: "175px" }}
+    >
+      {timeRules.map((d, i) => {
+        // Logic to determine if we should show "All Day"
+        const isAllDay = 
+          d.all_day || 
+          (d.discount_times?.[0]?.start_time?.slice(0, 5) === "00:00" && 
+           d.discount_times?.[0]?.end_time?.slice(0, 5) === "23:59");
+
+        return (
+          <div
+            key={i}
+            className="flex flex-col justify-between text-xs bg-[#F0F9FF] border border-[#E0F2FE] px-3 py-2.5 rounded-lg gap-2"
+          >
+            <div className="flex items-center gap-2 text-sky-800 font-semibold">
+              <Calendar
+                size={12}
+                className="text-sky-500 shrink-0"
+              />
+              <span className="truncate">
+                {formatDate(d.start_date)} — {formatDate(d.end_date)}
+              </span>
+            </div>
+            
+            {/* Display "All Day" badge or the specific Time Interval */}
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border self-start ${
+              isAllDay 
+                ? "text-amber-700 bg-amber-50 border-amber-100" 
+                : "text-sky-600 bg-white border-sky-100"
+            }`}>
+              <Clock size={11} className="shrink-0" />
+              <span className="font-mono text-[11px] whitespace-nowrap font-bold">
+                {isAllDay 
+                  ? "All Day" 
+                  : d.discount_times?.length > 0
+                    ? `${d.discount_times[0].start_time.slice(0, 5)} - ${d.discount_times[0].end_time.slice(0, 5)}`
+                    : "No time set"
+                }
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <span className="text-sm text-gray-900 font-semibold">
+      No discount date selected
+    </span>
+  )}
+</div>
 
               {/* CARDS & MCCs - GRID LAYOUT */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -1005,11 +1070,11 @@ const ViewCampaign = () => {
                   Tax: {amt.tax_percentage}%
                 </span>
               )}
-              {amt.max_discount_cap && (
+              {/* {amt.max_discount_cap && (
                 <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded border border-yellow-100 font-bold uppercase">
                   Capped Offer
                 </span>
-              )}
+              )} */}
             </div>
           </div>
 

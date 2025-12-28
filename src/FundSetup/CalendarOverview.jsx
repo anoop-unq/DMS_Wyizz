@@ -54,7 +54,7 @@ const CalendarOverview = ({
     return (
       <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-100">
         <Calendar className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-        <p className="text-gray-500 font-medium">Please set campaign dates in Campaign Details</p>
+        <p className="text-gray-500 font-medium">Please set campaign dates in Campaign Details (or) Above</p>
       </div>
     );
   }
@@ -101,7 +101,129 @@ const CalendarOverview = ({
   );
 };
 
-// --- Updated Calendar Day Component ---
+
+
+// const CalendarDay = ({
+//   date,
+//   patternConfigs,
+//   specificDateConfigs,
+//   onDateClick,
+//   onViewDateSlots,
+//   onClearDayFromCalendar,
+//   getSlotsForDate,
+// }) => {
+//   if (!date) return <div className="h-28"></div>;
+
+//   const dateStr = getLocalYYYYMMDD(date);
+//   const dayOfWeek = date.getDay();
+  
+//   const specificConfig = specificDateConfigs.find(c => c.date === dateStr);
+  
+//   const patternConfig = patternConfigs.find(c => {
+//     const isInRange = dateStr >= c.startDate && dateStr <= c.endDate;
+//     if (!isInRange) return false;
+//     if (c.type === "range" || c.pattern === "custom_range") return true;
+    
+//     const checks = {
+//       "all_sundays": dayOfWeek === 0, "all_mondays": dayOfWeek === 1,
+//       "all_tuesdays": dayOfWeek === 2, "all_wednesdays": dayOfWeek === 3,
+//       "all_thursdays": dayOfWeek === 4, "all_fridays": dayOfWeek === 5,
+//       "all_saturdays": dayOfWeek === 6, "all_weekends": dayOfWeek === 0 || dayOfWeek === 6,
+//       "all_weekdays": dayOfWeek >= 1 && dayOfWeek <= 5,
+//     };
+//     return checks[c.pattern] || false;
+//   });
+
+//   const slots = getSlotsForDate(date);
+//   const hasConfig = !!specificConfig || !!patternConfig;
+  
+//   /** * ✅ Logic to trigger "All Day" UI:
+//    * Checks if slots array is empty (API all_day: true) 
+//    * OR if any slot specifically covers 00:00 to 23:59
+//    */
+//   const isAllDay = hasConfig && (
+//     slots.length === 0 || 
+//     slots.some(s => (
+//       // Check for 24h strings or the converted 12h equivalents
+//       (s.startTime === "00:00" && s.endTime === "23:59") ||
+//       (s.startTime === "12:00" && s.startPeriod === "AM" && s.endTime === "11:59" && s.endPeriod === "PM")
+//     ))
+//   );
+
+//   // --- Styling Logic ---
+//   let bgColor = 'bg-white border-gray-100';
+//   let borderColor = 'border-gray-100';
+//   let textColor = 'text-gray-400';
+//   let hoverTitle = "Click to add restriction";
+
+//   if (hasConfig) {
+//     textColor = 'text-gray-800';
+//     if (isAllDay) {
+//       bgColor = 'bg-[#ECFEFF]'; 
+//       borderColor = 'border-[#A5F3FC]';
+//     } else if (specificConfig) {
+//       bgColor = 'bg-[#F0FDF4]'; 
+//       borderColor = 'border-[#BBF7D0]'; 
+//       hoverTitle = "Edit specific day restriction";
+//     } else {
+//       bgColor = 'bg-[#EFF6FF]'; 
+//       borderColor = 'border-[#BFDBFE]'; 
+//       hoverTitle = `Edit recurring pattern: ${patternConfig.pattern.replace('all_', '')}`;
+//     }
+//   }
+
+//   return (
+//     <div
+//       onClick={() => onDateClick(date)}
+//       title={hoverTitle}
+//       className={`h-28 rounded-xl border-2 ${borderColor} p-2 cursor-pointer hover:shadow-md transition-all flex flex-col ${bgColor}`}
+//     >
+//       <div className="flex items-center justify-between border-b border-gray-100/50 pb-1 mb-1">
+//         <span className={`text-sm font-bold ${textColor}`}>
+//           {date.getDate()}
+//         </span>
+//         {specificConfig && (
+//           <button
+//             onClick={(e) => {
+//               e.stopPropagation();
+//               onClearDayFromCalendar(date);
+//             }}
+//             className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-0.5 rounded"
+//           >
+//             <X size={14} />
+//           </button>
+//         )}
+//       </div>
+      
+//       <div className="flex-1 flex flex-col justify-start space-y-1 overflow-hidden">
+//         {isAllDay ? (
+//           /* ✅ Render the "All Day" UI Box exactly as requested */
+//           <div className="mt-1 flex items-center justify-start w-full px-2 py-1.5 bg-transparent border border-amber-200 rounded-lg">
+//             <span className="text-[11px] font-semibold text-slate-500">
+//               All Day
+//             </span>
+//           </div>
+//         ) : (
+//           /* Show individual time slots if not All Day */
+//           slots.slice(0, 3).map((slot, i) => (
+//             <div
+//               key={i}
+//               className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate ${
+//                 slot.type === "specific"
+//                   ? "bg-green-100 text-green-700 border border-green-200"
+//                   : "bg-blue-100 text-blue-700 border border-blue-200"
+//               }`}
+//             >
+//               {convertTo24H(slot.startTime, slot.startPeriod)} - {convertTo24H(slot.endTime, slot.endPeriod)}
+//             </div>
+//           ))
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+
 const CalendarDay = ({
   date,
   patternConfigs,
@@ -116,10 +238,8 @@ const CalendarDay = ({
   const dateStr = getLocalYYYYMMDD(date);
   const dayOfWeek = date.getDay();
   
-  // 1. Check if configured as a specific date
   const specificConfig = specificDateConfigs.find(c => c.date === dateStr);
   
-  // 2. Check if covered by any pattern
   const patternConfig = patternConfigs.find(c => {
     const isInRange = dateStr >= c.startDate && dateStr <= c.endDate;
     if (!isInRange) return false;
@@ -137,33 +257,40 @@ const CalendarDay = ({
 
   const slots = getSlotsForDate(date);
   const hasConfig = !!specificConfig || !!patternConfig;
-  const isAllDay = hasConfig && slots.length === 0;
+  
+  const isAllDay = hasConfig && (
+    slots.length === 0 || 
+    slots.some(s => (
+      (s.startTime === "00:00" && s.endTime === "23:59") ||
+      (s.startTime === "12:00" && s.startPeriod === "AM" && s.endTime === "11:59" && s.endPeriod === "PM")
+    ))
+  );
 
-  // --- Logic for Colors ---
   let bgColor = 'bg-white border-gray-100';
   let borderColor = 'border-gray-100';
   let textColor = 'text-gray-400';
+  let hoverTitle = "Click to add restriction";
 
   if (hasConfig) {
     textColor = 'text-gray-800';
     if (isAllDay) {
-      // ✅ "All Day" Style (Light Amber/Orange)
       bgColor = 'bg-[#ECFEFF]'; 
-  borderColor = 'border-[#A5F3FC]';
+      borderColor = 'border-[#A5F3FC]';
     } else if (specificConfig) {
-      // Timed Specific (Green)
       bgColor = 'bg-[#F0FDF4]'; 
       borderColor = 'border-[#BBF7D0]'; 
+      hoverTitle = "Edit specific day restriction";
     } else {
-      // Timed Pattern (Blue)
       bgColor = 'bg-[#EFF6FF]'; 
       borderColor = 'border-[#BFDBFE]'; 
+      hoverTitle = `Edit recurring pattern: ${patternConfig.pattern.replace('all_', '')}`;
     }
   }
 
   return (
     <div
       onClick={() => onDateClick(date)}
+      title={hoverTitle}
       className={`h-28 rounded-xl border-2 ${borderColor} p-2 cursor-pointer hover:shadow-md transition-all flex flex-col ${bgColor}`}
     >
       <div className="flex items-center justify-between border-b border-gray-100/50 pb-1 mb-1">
@@ -183,39 +310,52 @@ const CalendarDay = ({
         )}
       </div>
       
-      <div className="flex-1 space-y-1 overflow-hidden">
+      <div className="flex-1 flex flex-col justify-start space-y-1 overflow-hidden">
         {isAllDay ? (
-          // ✅ Show "All Day" label if configuration exists but no slots
-          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500  px-1.5 py-1 rounded border border-amber-200/50">
-
-            All Day
+          <div className="mt-1 flex items-center justify-start w-full px-2 py-1.5 bg-transparent border border-amber-200 rounded-lg">
+            <span className="text-[11px] font-semibold text-slate-500">
+              All Day
+            </span>
           </div>
         ) : (
-          slots.slice(0, 3).map((slot, i) => (
-            <div
-              key={i}
-              className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate ${
-                slot.type === "specific"
-                  ? "bg-green-100 text-green-700 border border-green-200"
-                  : "bg-blue-100 text-blue-700 border border-blue-200"
-              }`}
-            >
-              {convertTo24H(slot.startTime, slot.startPeriod)} - {convertTo24H(slot.endTime, slot.endPeriod)}
-            </div>
-          ))
+          <>
+            {/* Show first 2 slots if more than 3, otherwise show up to 3 */}
+            {slots.slice(0, slots.length > 3 ? 2 : 3).map((slot, i) => (
+              <div
+                key={i}
+                className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate ${
+                  slot.type === "specific"
+                    ? "bg-green-100 text-green-700 border border-green-200"
+                    : "bg-blue-100 text-blue-700 border border-blue-200"
+                }`}
+              >
+                {convertTo24H(slot.startTime, slot.startPeriod)} - {convertTo24H(slot.endTime, slot.endPeriod)}
+              </div>
+            ))}
+
+            {/* ✅ Added styled "+ more" box for Specific & Pattern dates */}
+            {slots.length > 3 && (
+             <button
+  onClick={(e) => {
+    e.stopPropagation();
+    onViewDateSlots(date);
+  }}
+  className={`text-[9px] font-bold px-1.5 py-0.5 rounded border mt-0.5 text-left w-fit shadow-sm transition-colors cursor-pointer ${
+    specificConfig 
+      ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200" 
+      : "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200"
+  }`}
+>
+  + {slots.length - 2} more
+</button>
+            )}
+          </>
         )}
       </div>
-      
-      {!isAllDay && slots.length > 3 && (
-        <div
-          onClick={(e) => { e.stopPropagation(); onViewDateSlots(date); }}
-          className="mt-1 text-[10px] text-[#7747EE] font-bold bg-[#EFEFFD] text-center rounded py-0.5 hover:bg-[#7747EE] hover:text-white transition-colors"
-        >
-          + {slots.length - 3} More
-        </div>
-      )}
     </div>
   );
 };
+
+
 
 export default CalendarOverview;

@@ -49,7 +49,7 @@ const Pagination = ({
           disabled={currentPage === 1}
           className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Preview
+          Prev
         </button>
 
         {/* PAGE NUMBERS */}

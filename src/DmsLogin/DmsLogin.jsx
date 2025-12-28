@@ -57,7 +57,7 @@ export default function DmsLogin() {
         // But for simplicity, useAuth defaults to localStorage.
         // You can add logic here if strict session vs local storage is needed.
         
-        navigate("/"); // Redirect to Home
+        navigate("/dashboard"); // Redirect to Home
     }
   };
 

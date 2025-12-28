@@ -271,6 +271,44 @@ import {
 /**
  * IMPROVED PARSER - Logic preserved
  */
+// const markdownToHtml = (markdown) => {
+//   if (!markdown) return '';
+//   let html = markdown;
+
+//   html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-slate-900">$1</h3>');
+//   html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-slate-900">$1</h2>');
+//   html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-slate-900">$1</h1>');
+
+//   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+//   html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+//   html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
+
+//   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
+//   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+//     '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline hover:text-indigo-800 transition-colors font-medium cursor-pointer">$1</a>'
+//   );
+
+//   html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
+//   html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-slate-700">${match}</ul>`);
+
+//   html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
+//   html = html.replace(/(<li class="ol-item ml-4">.*?<\/li>\n?)+/g, (match) => {
+//     const cleanedMatch = match.replaceAll('ol-item ', '');
+//     return `<ol class="list-decimal list-inside my-4 space-y-1 text-slate-700">${cleanedMatch}</ol>`;
+//   });
+
+//   html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-slate-600 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/50">$1</span>');
+//   html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-slate-800 border border-slate-200/60 shadow-sm leading-relaxed"><code>$1</code></pre>');
+//   html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-slate-200 pl-4 py-2 italic text-slate-500 my-6 bg-slate-50/50 rounded-r">$1</blockquote>');
+  
+//   html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
+//   html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
+//   html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
+
+//   return `<div class="leading-7">${html}</div>`;
+// };
+
+
 const markdownToHtml = (markdown) => {
   if (!markdown) return '';
   let html = markdown;
@@ -292,7 +330,9 @@ const markdownToHtml = (markdown) => {
   html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-slate-700">${match}</ul>`);
 
   html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
-  html = html.replace(/(<li class="ol-item ml-4">.*?<\/li>\n?)+/g, (match) => {
+  
+  // FIX: Fixed wrapper regex to match the class "ol-item ml-4 mb-1" produced above
+  html = html.replace(/(<li class="ol-item ml-4 mb-1">.*?<\/li>\n?)+/g, (match) => {
     const cleanedMatch = match.replaceAll('ol-item ', '');
     return `<ol class="list-decimal list-inside my-4 space-y-1 text-slate-700">${cleanedMatch}</ol>`;
   });
@@ -392,16 +432,42 @@ const NvdMarkdownEditor = ({ value = '', onChange, placeholder, disabled, height
     }, 0);
   };
 
+  // const insertList = (prefix) => {
+  //   const textarea = textareaRef.current;
+  //   const start = textarea.selectionStart;
+  //   const end = textarea.selectionEnd;
+  //   const scrollPos = textarea.scrollTop;
+  //   const selectedText = markdownContent.substring(start, end);
+
+  //   let transformed = selectedText.length > 0 
+  //     ? selectedText.split('\n').map((line, i) => {
+  //         const p = prefix === '1. ' ? `${i + 1}. ` : prefix;
+  //         return line.trim().startsWith(p.trim()) ? line : `${p}${line}`;
+  //       }).join('\n')
+  //     : `\n${prefix}`;
+
+  //   const newContent = markdownContent.substring(0, start) + transformed + markdownContent.substring(end);
+  //   handleContentChange(newContent);
+  //   setTimeout(() => { textarea.focus(); textarea.scrollTop = scrollPos; }, 0);
+  // };
+
+
   const insertList = (prefix) => {
     const textarea = textareaRef.current;
+    if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const scrollPos = textarea.scrollTop;
     const selectedText = markdownContent.substring(start, end);
 
+    let listCounter = 1;
     let transformed = selectedText.length > 0 
-      ? selectedText.split('\n').map((line, i) => {
-          const p = prefix === '1. ' ? `${i + 1}. ` : prefix;
+      ? selectedText.split('\n').map((line) => {
+          // Neglect empty or whitespace lines
+          if (!line.trim()) return line;
+          
+          const p = prefix === '1. ' ? `${listCounter++}. ` : prefix;
+          // Avoid double prefixing
           return line.trim().startsWith(p.trim()) ? line : `${p}${line}`;
         }).join('\n')
       : `\n${prefix}`;
@@ -410,7 +476,7 @@ const NvdMarkdownEditor = ({ value = '', onChange, placeholder, disabled, height
     handleContentChange(newContent);
     setTimeout(() => { textarea.focus(); textarea.scrollTop = scrollPos; }, 0);
   };
-
+  
   const handleConfirmLink = () => {
     if (linkInput.trim()) {
       const finalUrl = `https://${linkInput.replace(/^https?:\/\//, '')}`;

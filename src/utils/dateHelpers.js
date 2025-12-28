@@ -30,6 +30,8 @@ export const convertFrom24H = (time24) => {
   };
 };
 
+
+
 export const getLocalYYYYMMDD = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -96,11 +98,92 @@ export const checkTimeSlotOverlap = (slots) => {
 
 // ... (keep convertTo24H, convertFrom24H, getLocalYYYYMMDD, formatDisplayDate, etc. exactly as they are)
 
+// export const prepareFinalData = (patternConfigs, specificDateConfigs, mainStartDate, mainEndDate) => {
+//   if (!mainStartDate || !mainEndDate) return [];
+
+//   const apiRules = [];
+
+//   const getISODateStart = (dateStr) => `${dateStr}T00:00:00.000Z`;
+//   const getISODateEnd = (dateStr) => `${dateStr}T23:59:59.999Z`;
+
+//   const timeslotToApiFormat = (s) => ({
+//     start_time: convertTo24H(s.startTime, s.startPeriod) || "09:00",
+//     end_time: convertTo24H(s.endTime, s.endPeriod) || "17:00",
+//   });
+
+//   // Create a loop to check every single day in the campaign range
+//   const start = new Date(mainStartDate);
+//   const end = new Date(mainEndDate);
+
+//   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+//     const dateStr = getLocalYYYYMMDD(d);
+//     const dayOfWeek = d.getDay();
+
+//     // 1. Check for Specific Date first (overrides patterns)
+//     const specific = specificDateConfigs.find((c) => c.date === dateStr);
+//     if (specific) {
+//       apiRules.push({
+//         start_date: getISODateStart(dateStr),
+//         end_date: getISODateEnd(dateStr),
+//         all_day: false,
+//         discount_times: specific.timeSlots.map(timeslotToApiFormat),
+//       });
+//       continue; // Move to next day
+//     }
+
+//     // 2. Check if this day matches any active pattern configs
+//     // We only take the first matching pattern for simplicity (matching your UI logic)
+//     const activePattern = patternConfigs.find((c) => {
+//       const isInRange = dateStr >= c.startDate && dateStr <= c.endDate;
+//       if (!isInRange) return false;
+
+//       if (c.pattern === "custom_range") return true;
+
+//       const checks = {
+//         all_sundays: dayOfWeek === 0,
+//         all_mondays: dayOfWeek === 1,
+//         all_tuesdays: dayOfWeek === 2,
+//         all_wednesdays: dayOfWeek === 3,
+//         all_thursdays: dayOfWeek === 4,
+//         all_fridays: dayOfWeek === 5,
+//         all_saturdays: dayOfWeek === 6,
+//         all_weekends: dayOfWeek === 0 || dayOfWeek === 6,
+//         all_weekdays: dayOfWeek >= 1 && dayOfWeek <= 5,
+//       };
+//       return checks[c.pattern] || false;
+//     });
+
+//     if (activePattern) {
+//       apiRules.push({
+//         start_date: getISODateStart(dateStr),
+//         end_date: getISODateEnd(dateStr),
+//         all_day: false,
+//         discount_times: activePattern.timeSlots.map(timeslotToApiFormat),
+//       });
+//     }
+//   }
+
+//   // If no restrictions are added, send the whole campaign range as "all day" restricted
+//   if (apiRules.length === 0) {
+//     return [
+//       {
+//         start_date: getISODateStart(mainStartDate),
+//         end_date: getISODateEnd(mainEndDate),
+//         all_day: true,
+//         discount_times: [],
+//       },
+//     ];
+//   }
+
+//   return apiRules;
+// };
+
+// utils/dateHelpers.js - Update only the prepareFinalData function
+
 export const prepareFinalData = (patternConfigs, specificDateConfigs, mainStartDate, mainEndDate) => {
   if (!mainStartDate || !mainEndDate) return [];
 
   const apiRules = [];
-
   const getISODateStart = (dateStr) => `${dateStr}T00:00:00.000Z`;
   const getISODateEnd = (dateStr) => `${dateStr}T23:59:59.999Z`;
 
@@ -109,7 +192,6 @@ export const prepareFinalData = (patternConfigs, specificDateConfigs, mainStartD
     end_time: convertTo24H(s.endTime, s.endPeriod) || "17:00",
   });
 
-  // Create a loop to check every single day in the campaign range
   const start = new Date(mainStartDate);
   const end = new Date(mainEndDate);
 
@@ -117,24 +199,23 @@ export const prepareFinalData = (patternConfigs, specificDateConfigs, mainStartD
     const dateStr = getLocalYYYYMMDD(d);
     const dayOfWeek = d.getDay();
 
-    // 1. Check for Specific Date first (overrides patterns)
+    // 1. Specific Date Check
     const specific = specificDateConfigs.find((c) => c.date === dateStr);
     if (specific) {
+      const isAllDay = specific.timeSlots.length === 0; // ✅ Logic for All Day
       apiRules.push({
         start_date: getISODateStart(dateStr),
         end_date: getISODateEnd(dateStr),
-        all_day: false,
-        discount_times: specific.timeSlots.map(timeslotToApiFormat),
+        all_day: isAllDay,
+        discount_times: isAllDay ? [] : specific.timeSlots.map(timeslotToApiFormat),
       });
-      continue; // Move to next day
+      continue;
     }
 
-    // 2. Check if this day matches any active pattern configs
-    // We only take the first matching pattern for simplicity (matching your UI logic)
+    // 2. Pattern Check
     const activePattern = patternConfigs.find((c) => {
       const isInRange = dateStr >= c.startDate && dateStr <= c.endDate;
       if (!isInRange) return false;
-
       if (c.pattern === "custom_range") return true;
 
       const checks = {
@@ -152,25 +233,24 @@ export const prepareFinalData = (patternConfigs, specificDateConfigs, mainStartD
     });
 
     if (activePattern) {
+      const isAllDay = activePattern.timeSlots.length === 0; // ✅ Logic for All Day
       apiRules.push({
         start_date: getISODateStart(dateStr),
         end_date: getISODateEnd(dateStr),
-        all_day: false,
-        discount_times: activePattern.timeSlots.map(timeslotToApiFormat),
+        all_day: isAllDay,
+        discount_times: isAllDay ? [] : activePattern.timeSlots.map(timeslotToApiFormat),
       });
     }
   }
 
-  // If no restrictions are added, send the whole campaign range as "all day" restricted
+  // Fallback: If absolutely nothing is restricted, return campaign range as All Day restricted
   if (apiRules.length === 0) {
-    return [
-      {
-        start_date: getISODateStart(mainStartDate),
-        end_date: getISODateEnd(mainEndDate),
-        all_day: true,
-        discount_times: [],
-      },
-    ];
+    return [{
+      start_date: getISODateStart(mainStartDate),
+      end_date: getISODateEnd(mainEndDate),
+      all_day: true,
+      discount_times: [],
+    }];
   }
 
   return apiRules;

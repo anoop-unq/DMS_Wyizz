@@ -75,50 +75,111 @@ const DetailRow = ({ label, value, isTagRow = false }) => (
   </div>
 );
 
-const markdownToHtml = (markdown) => {
-  if (!markdown) return '';
-  let html = markdown;
-
-  // 1. Headers
-  html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
-  html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-gray-900">$1</h2>');
-  html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-gray-900">$1</h1>');
-
-  // 2. Formatting
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
-  html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
-
-  // 3. Links & Images
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800 transition-colors font-medium cursor-pointer">$1</a>'
-  );
-
-  // 4. Lists
-  html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
-  html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-gray-800">${match}</ul>`);
-
-  html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
-  html = html.replace(/(<li class="ol-item ml-4">.*?<\/li>\n?)+/g, (match) => {
-    const cleanedMatch = match.replaceAll('ol-item ', '');
-    return `<ol class="list-decimal list-inside my-4 space-y-1 text-gray-800">${cleanedMatch}</ol>`;
-  });
-
-  // 5. Code & Blockquotes
-  html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">$1</span>');
-  html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-gray-800 border border-gray-200 shadow-sm leading-relaxed"><code>$1</code></pre>');
-  html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600 my-6 bg-gray-50/30 rounded-r">$1</blockquote>');
+// const markdownToHtml = (markdown) => {
+//   if (!markdown) return '';
   
-  // 6. Spacing Logic
-  html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
-  html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
-  html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
+//   // 1. TYPOGRAPHY & ENCODING CLEANER
+//   let html = markdown
+//     // Remove the specific "OBJ" box character (\uFFFC)
+//     .replace(/\uFFFC/g, '')
+//     // Fix mangled apostrophes (the "donâ...t" issue)
+//     // This replaces the "â" and any following corrupted boxes with a standard apostrophe
+//     .replace(/â[\s\uFFFC\u0080-\u009F]{1,3}/g, "'")
+//     // Replace Non-Breaking Spaces with normal spaces
+//     .replace(/\u00A0/g, ' ')
+//     // Remove other hidden control characters
+//     .replace(/[\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, '');
 
-  return `<div class="leading-7">${html}</div>`;
+//   // 2. Headers
+//   html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
+//   html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-gray-900">$1</h2>');
+//   html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-gray-900">$1</h1>');
+
+//   // 3. Formatting
+//   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+//   html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+//   html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
+
+//   // 4. Links & Images
+//   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
+//   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+//     '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800 transition-colors font-medium cursor-pointer">$1</a>'
+//   );
+
+//   // 5. Lists
+//   html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
+//   html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-gray-800">${match}</ul>`);
+
+//   html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
+//   html = html.replace(/(<li class="ol-item ml-4">.*?<\/li>\n?)+/g, (match) => {
+//     const cleanedMatch = match.replaceAll('ol-item ', '');
+//     return `<ol class="list-decimal list-inside my-4 space-y-1 text-gray-800">${cleanedMatch}</ol>`;
+//   });
+
+//   // 6. Code & Blockquotes
+//   html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">$1</span>');
+//   html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-gray-800 border border-gray-200 shadow-sm leading-relaxed"><code>$1</code></pre>');
+//   html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600 my-6 bg-gray-50/30 rounded-r">$1</blockquote>');
+  
+//   // 7. Spacing Logic
+//   html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
+//   html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
+//   html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
+
+//   return `<div class="leading-7">${html}</div>`;
+// };
+
+
+const markdownToHtml = (markdown) => {
+  if (!markdown) return '';
+  
+  // 1. TYPOGRAPHY & ENCODING CLEANER
+  let html = markdown
+    .replace(/\uFFFC/g, '')
+    .replace(/â[\s\uFFFC\u0080-\u009F]{1,3}/g, "'")
+    .replace(/\u00A0/g, ' ')
+    .replace(/[\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, '');
+
+  // 2. Headers
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2 text-gray-900">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-5 mb-3 text-gray-900">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4 text-gray-900">$1</h1>');
+
+  // 3. Formatting
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+  html = html.replace(/~~(.*?)~~/g, '<del class="line-through">$1</del>');
+
+  // 4. Links & Images
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-md my-4" />');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800 transition-colors font-medium cursor-pointer">$1</a>'
+  );
+
+  // 5. Lists
+  html = html.replace(/^\s*[\-\*\+] (.*$)/gim, '<li class="ml-4 mb-1">$1</li>');
+  html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul class="list-disc list-inside my-4 space-y-1 text-gray-800">${match}</ul>`);
+
+  html = html.replace(/^\s*\d+\. (.*$)/gim, '<li class="ol-item ml-4 mb-1">$1</li>');
+  // FIXED: Added "mb-1" to the regex below to match the line above
+  html = html.replace(/(<li class="ol-item ml-4 mb-1">.*?<\/li>\n?)+/g, (match) => {
+    const cleanedMatch = match.replaceAll('ol-item ', '');
+    return `<ol class="list-decimal list-inside my-4 space-y-1 text-gray-800">${cleanedMatch}</ol>`;
+  });
+
+  // 6. Code & Blockquotes
+  html = html.replace(/`([^`]+)`/g, '<span class="font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">$1</span>');
+  html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-50 p-4 rounded-lg my-6 font-mono text-sm overflow-x-auto text-gray-800 border border-gray-200 shadow-sm leading-relaxed"><code>$1</code></pre>');
+  html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600 my-6 bg-gray-50/30 rounded-r">$1</blockquote>');
+  
+  // 7. Spacing Logic
+  html = html.replace(/\n{3,}/g, '<div class="py-6"></div>');
+  html = html.replace(/\n\n/g, '<div class="mb-5"></div>');
+  html = html.replace(/\n(?!(?:<\/?[^>]+>))/g, '<br />');
+
+  return `<div class="leading-7">${html}</div>`;
 };
 
-// --- Main Component ---
 export default function CampaignSummaryUI({
   data = {},
   onPrevious = () => {},
@@ -135,6 +196,12 @@ export default function CampaignSummaryUI({
   // ✅ New State: Tracks if user has clicked "Save as Draft"
   const [isDraftSaved, setIsDraftSaved] = useState(false);
 
+
+const [activeDocIndex, setActiveDocIndex] = useState(0);
+const [isDocSwitching, setIsDocSwitching] = useState(false);
+
+
+
   useEffect(() => {
     const role = localStorage.getItem("usertype");
     setUserType(role ? role.toLowerCase() : "");
@@ -149,7 +216,7 @@ export default function CampaignSummaryUI({
   const step6 = data.step6 || {};
   const step7 = data.step7 || {};
   const step8 = data.step8 || {};
-console.log(step6,"Two Num")
+console.log(step4,"Two Num")
 
   // 1. FETCH EXISTING DATA
   useEffect(() => {
@@ -348,6 +415,15 @@ const midsToDisplay = (step4.finalMidRestrictions && step4.finalMidRestrictions.
     }
     return { bank: 0, merchant: 0, extra: [] };
   })();
+
+
+const handleTabChange = (index) => {
+  if (index === activeDocIndex) return;
+  setIsDocSwitching(true);
+  setActiveDocIndex(index);
+  // Simulate a brief loading transition for better UX
+  setTimeout(() => setIsDocSwitching(false), 300);
+};
 
   // --- SUBMIT HANDLER ---
   const handleFinalSubmit = async (buttonType) => {
@@ -606,9 +682,11 @@ finalMccs = rawMccsSource.map((m) => ({
           icon: "success",
           title: "Saved!",
           text: "Campaign Saved Successfully! You can now submit it.",
-          confirmButtonColor: "#7B3FE4",
+   
           timer: 2000,
-          showConfirmButton: false,
+                showConfirmButton: true, // Enables the confirmation button
+          confirmButtonText: "OK", // Custom text for the button
+          confirmButtonColor: "#6366F1",
         });
 
         if (onRefresh) await onRefresh();
@@ -761,13 +839,13 @@ return (
           </div>
         </SummaryCard>
 
-        {/* CARD 4: DISCOUNT CONFIGURATION */}
+
        <SummaryCard title="Discount Configuration" icon={CreditCard}>
   <DetailRow label="Total Slabs" value={discountCountLabel} />
   <div className="mt-3 pt-2 border-t border-slate-100 h-[200px] overflow-y-auto hide-scroll space-y-3 pr-1">
     {activeAmounts.map((slab, idx) => (
       <div key={idx} className="bg-white border border-slate-200 p-3 rounded-lg shadow-sm">
-        {/* Header Section */}
+  
         <div className="flex justify-between items-center mb-3">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Slab #{idx + 1}</span>
           <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
@@ -775,29 +853,28 @@ return (
           </span>
         </div>
 
-        {/* Data Grid Section */}
+      
         <div className="grid grid-cols-2 gap-y-3 text-[11px]">
-          {/* Top Left: Transaction Range */}
+     
           <div className="flex flex-col">
             <p className="text-slate-400 font-medium mb-0.5">Txn Range</p>
             <p className="text-slate-900 font-bold font-mono">{slab.min_txn_amount} — {slab.max_txn_amount}</p>
           </div>
 
-          {/* Top Right: Max Cap */}
+
           <div className="flex flex-col text-right">
             <p className="text-slate-400 font-medium mb-0.5">Max Cap</p>
             <p className="text-slate-900 font-bold">{slab.max_discount_cap ? `${slab.max_discount_cap} AED` : "No Cap"}</p>
           </div>
 
-          {/* Bottom Left: Frequency Label */}
+
           <div className="flex flex-col border-t border-slate-50 pt-2">
             <p className="text-slate-400 font-medium mb-0.5">Frequency Limits</p>
             <p className="text-slate-400 text-[9px] uppercase font-bold">Daily / Weekly / Monthly</p>
           </div>
 
-          {/* Bottom Right: Frequency Values */}
           <div className="flex flex-col text-right border-t border-slate-50 pt-2">
-            <p className="text-slate-400 font-medium mb-0.5 invisible">Spacer</p> {/* Maintains vertical alignment */}
+            <p className="text-slate-400 font-medium mb-0.5 invisible">Spacer</p> 
             <p className="text-slate-900 font-bold tracking-wide">
               {slab.daily || "∞"} <span className="text-slate-300 mx-0.5">/</span> {slab.weekly || "∞"} <span className="text-slate-300 mx-0.5">/</span> {slab.monthly || "∞"}
             </p>
@@ -819,13 +896,13 @@ return (
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase block mb-2 tracking-wider">Networks</span>
                   <div className="flex flex-wrap gap-1">
-                    {networkNames.length > 0 ? networkNames.map((n, i) => <Tag key={i} variant="purple">{n}</Tag>) : <span className="text-xs text-slate-300">Default</span>}
+                    {networkNames.length > 0 ? networkNames.map((n, i) => <Tag key={i} variant="purple">{n}</Tag>) : <span className="text-xs text-slate-300">No Card Networks Selected</span>}
                   </div>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase block mb-2 tracking-wider">Card Types</span>
                   <div className="flex flex-wrap gap-1">
-                    {typeNames.length > 0 ? typeNames.map((t, i) => <Tag key={i} variant="gray">{t}</Tag>) : <span className="text-xs text-slate-300">Default</span>}
+                    {typeNames.length > 0 ? typeNames.map((t, i) => <Tag key={i} variant="gray">{t}</Tag>) : <span className="text-xs text-slate-300">No Card Types Selected</span>}
                   </div>
                 </div>
              </div>
@@ -851,7 +928,7 @@ return (
                   </div>
                 )}
               </div>
-            )) : <div className="text-center py-10 text-slate-400 text-xs italic">Active 24/7.</div>}
+            )) : <div className="text-center py-10 text-slate-400 text-xs italic">No Time Restrictions Selected</div>}
           </div>
         </SummaryCard>
 
@@ -883,45 +960,63 @@ return (
 
         {/* CARD 8: DOCUMENTS */}
         
-        <SummaryCard title="Documents & Terms" icon={FileText}>
-  <div className="h-[250px] overflow-y-auto hide-scroll space-y-8 pr-1">
-    {docsToDisplay.length > 0 ? (
-      docsToDisplay.map((doc, idx) => (
-        <div key={idx} className="border-b border-slate-100 last:border-0 pb-6 last:pb-0">
-          
-          {/* Document Name Section */}
-          <div className="mb-4">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">
-              Document Name
-            </span>
-            <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-purple-100 shadow-sm">
-              <FileText className="w-3 h-3" />
-              {doc.doc_name || "Terms & Conditions"}
-            </div>
-          </div>
 
-          {/* Markdown Content Section */}
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
-              Document Content
-            </span>
-            <div className="p-4 ">
-              <div 
-                className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: markdownToHtml(doc.doc_text) }} 
-              />
-            </div>
-          </div>
 
-        </div>
-      ))
-    ) : (
-      <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200 p-6">
-        <FileText className="w-8 h-8 mb-2 opacity-20" />
-        No documents attached to this campaign.
+<SummaryCard title="Documents & Terms" icon={FileText}>
+  {docsToDisplay.length > 0 ? (
+    <div className="flex flex-col h-[350px]">
+      {/* Dynamic Tab Header */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 border-b border-slate-100 scrollbar-hide">
+        {docsToDisplay.map((doc, idx) => (
+          <button
+            key={idx}
+            onClick={() => handleTabChange(idx)}
+            className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${
+              activeDocIndex === idx
+                ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
+                : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300"
+            }`}
+          >
+            {doc.doc_name}
+          </button>
+        ))}
       </div>
-    )}
-  </div>
+
+      {/* Document Content Area */}
+      <div className="flex-1 relative bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
+        {isDocSwitching ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10 backdrop-blur-[1px]">
+            <Loader2 className="w-6 h-6 animate-spin text-purple-500 mb-2" />
+            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">Loading Document...</span>
+          </div>
+        ) : null}
+
+        <div className="h-full overflow-y-auto p-5 custom-scrollbar">
+          {/* <div className="mb-6">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+              Currently Viewing
+            </span>
+            <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+              {docsToDisplay[activeDocIndex]?.doc_name}
+            </h4>
+          </div> */}
+
+          <div 
+            className="prose prose-slate prose-sm max-w-none text-slate-600 leading-relaxed"
+            dangerouslySetInnerHTML={{ 
+              __html: markdownToHtml(docsToDisplay[activeDocIndex]?.doc_text) 
+            }} 
+          />
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="h-[250px] flex flex-col items-center justify-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200 p-6">
+      <FileText className="w-8 h-8 mb-2 opacity-20 text-slate-400" />
+      No documents attached to this campaign.
+    </div>
+  )}
 </SummaryCard>
 
       </div>

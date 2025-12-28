@@ -44,6 +44,8 @@ export default function CampaignForm({
       selectedSegments: [],
       selectedSegmentIds: [],
       segmentRanges: {},
+      segmentTokens: {}, // ✅ Added this to track segment-specific tokens
+    finalSegmentsData: [],
       // tokens: [],
     },
     step3: { ranges: [] },
@@ -165,6 +167,8 @@ export default function CampaignForm({
           selectedSegments: segmentNames,
           selectedSegmentIds: segmentIds,
           segmentRanges: {},
+          segmentTokens: {}, // No global tokens needed here anymore
+    finalSegmentsData: (d.discount_segments || [])
           // tokens: [],
         },
         step3: { ranges: [] },
@@ -214,22 +218,34 @@ export default function CampaignForm({
     }
   }, [formData, isLoaded, initialData, visible]);
 
+  // const updateFormData = (stepKey, data) => {
+  //   if (data === null || data === undefined) return;
+  //   if (typeof data !== "object") data = {};
+
+  //   const cleanData = Object.keys(data)
+  //     .filter((key) => isNaN(parseInt(key)))
+  //     .reduce((obj, key) => {
+  //       obj[key] = data[key];
+  //       return obj;
+  //     }, {});
+
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [stepKey]: { ...prev[stepKey], ...cleanData },
+  //   }));
+  // };
+
   const updateFormData = (stepKey, data) => {
-    if (data === null || data === undefined) return;
-    if (typeof data !== "object") data = {};
+  if (!data) return;
 
-    const cleanData = Object.keys(data)
-      .filter((key) => isNaN(parseInt(key)))
-      .reduce((obj, key) => {
-        obj[key] = data[key];
-        return obj;
-      }, {});
-
-    setFormData((prev) => ({
-      ...prev,
-      [stepKey]: { ...prev[stepKey], ...cleanData },
-    }));
-  };
+  setFormData((prev) => ({
+    ...prev,
+    [stepKey]: { 
+      ...prev[stepKey], // Keep existing fields like selectedSegments
+      ...data           // Overwrite with incoming updates (new segment list)
+    },
+  }));
+};
 
   const handleNext = () => {
     if (step === 1) {
@@ -312,6 +328,7 @@ export default function CampaignForm({
             data={formData.step5}
             onUpdate={(data) => updateFormData("step5", data)}
             onNext={handleNext}
+            onMainDateUpdate={(dateData) => updateFormData("step1", dateData)}
             onPrevious={handlePrevious}
             campaignDatesFromProps={formData.step1}
             campaignId={formData.step1.id}
