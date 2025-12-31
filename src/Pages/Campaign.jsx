@@ -572,7 +572,7 @@ export default function CampaignsPage() {
                   {(() => {
                     const name = (item?.name || "").toLowerCase();
                     if (name === "all") return "Total Campaigns";
-                    // if (name === "running") return "Active";
+                    if (name === "running") return "Active";
                     if (name === "pending delete") return "Pending Delete";
                     return item?.name;
                   })()}

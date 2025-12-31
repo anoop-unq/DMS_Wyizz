@@ -42,7 +42,7 @@ export default function Sidebar({ sidebarToggle, setSidebarToggle, isMobile, use
           // Merchant Management - hide from discountchecker
      
           // Approver - only for discountchecker and admin
-          ...(['discountchecker', 'admin'].includes(currentUserType) ? [
+          ...([ 'admin'].includes(currentUserType) ? [
             {
               to: "/approval-central",
               icon: <UserCheck size={20} />,
@@ -60,16 +60,16 @@ export default function Sidebar({ sidebarToggle, setSidebarToggle, isMobile, use
               icon: <Users size={20} />,
               label: "User Management",
             },
-            {
-              to: "/bank-management",
-              icon: <Building size={20} />,
-              label: "Bank Management",
-            },
-              {
-              to: "/merchant-management",
-              icon: <Warehouse size={20} />,
-              label: "Merchant Management",
-            },
+            // {
+            //   to: "/bank-management",
+            //   icon: <Building size={20} />,
+            //   label: "Bank Management",
+            // },
+            //   {
+            //   to: "/merchant-management",
+            //   icon: <Warehouse size={20} />,
+            //   label: "Merchant Management",
+            // },
           ] : []),
           
           // Bin Management - for makers, admin, bank
@@ -134,9 +134,9 @@ export default function Sidebar({ sidebarToggle, setSidebarToggle, isMobile, use
           {/* Header - Show user type */}
           <div className="p-6 border-b border-gray-200 h-16 flex items-center shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-14 h-12 border border-[#0078D4] bg-white rounded-[10px] flex items-center justify-center shadow-sm">
+              <div className="w-14 h-12  flex items-center justify-center ">
                 <img
-                  src={assets.logo}
+                  src={assets.wyizzLogoMain}
                   alt="Wyizz logo"
                   className="w-12.5 h-10 object-cover" 
                 />

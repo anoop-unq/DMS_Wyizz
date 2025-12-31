@@ -1,8 +1,8 @@
-
 import React, { useMemo, useState } from "react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom"; 
-import { useAuth } from "../Hook/useAuth"; // Import the new hook
+import { useAuth } from "../Hook/useAuth"; 
+import Swal from "sweetalert2"; // ✅ Added SweetAlert2
 
 export default function DmsLogin() {
   const navigate = useNavigate();
@@ -16,18 +16,18 @@ export default function DmsLogin() {
   const { login, loading } = useAuth();
 
   // ------------------ ANIMATION CONSTANTS ------------------
-  const LIFT_PX = -22;       
-  const SCALE = 1.03;        
-  const ROTATE_DEG = 12;     
+  const LIFT_PX = -22; 
+  const SCALE = 1.03; 
+  const ROTATE_DEG = 12; 
   // ---------------------------------------------------------
 
   // Tile geometry setup
-  const tileSize = 145;      
-  const tileRadius = 18;     
-  const tileGapX = 22;       
-  const tileGapY = 22;       
-  const rows = 18;           
-  const cols = 18;           
+  const tileSize = 145; 
+  const tileRadius = 18; 
+  const tileGapX = 22; 
+  const tileGapY = 22; 
+  const rows = 18; 
+  const cols = 18; 
 
   const centerR = Math.floor(rows / 2);
   const centerC = Math.floor(cols / 2);
@@ -42,22 +42,30 @@ export default function DmsLogin() {
       }
     }
     return arr;
-  }, [rows, cols, tileSize, tileGapX, tileGapY]);
+  }, [rows, cols]);
 
-  // ---------------------- SUBMIT HANDLER ----------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // 1. Call login from useAuth
     const result = await login(email, password);
 
-    // 2. Handle Success (Storage is handled inside useAuth)
     if (result.success) {
-        // If "Remember Me" is NOT checked, we might want to move to sessionStorage
-        // But for simplicity, useAuth defaults to localStorage.
-        // You can add logic here if strict session vs local storage is needed.
-        
-        navigate("/dashboard"); // Redirect to Home
+        Swal.fire({
+            icon: 'success',
+            title: 'Login Successful',
+            text: 'Redirecting to your dashboard...',
+            confirmButtonColor: "#0A2240",
+            timer: 1500,
+            showConfirmButton: false
+        }).then(() => {
+            navigate("/dashboard");
+        });
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Failed',
+            text: result.error || "Incorrect username or password",
+            confirmButtonColor: "#0A2240",
+        });
     }
   };
 
@@ -120,12 +128,12 @@ export default function DmsLogin() {
           <form onSubmit={handleSubmit} className="space-y-4" aria-live="polite">
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>
-              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" required aria-label="Email address" className="w-full rounded-lg px-4 py-3 text-sm bg-[#F9FAFB] border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#A2C8FF]" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' }} autoComplete="username" />
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" required className="w-full rounded-lg px-4 py-3 text-sm bg-[#F9FAFB] border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#A2C8FF]" />
             </div>
 
             <div>
               <label htmlFor="password" className="sr-only">Password</label>
-              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required aria-label="Password" className="w-full rounded-lg px-4 py-3 text-sm bg-[#F9FAFB] border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#A2C8FF]" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' }} autoComplete="current-password" />
+              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required className="w-full rounded-lg px-4 py-3 text-sm bg-[#F9FAFB] border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#A2C8FF]" />
             </div>
 
             <div className="flex items-center justify-between text-sm">
@@ -138,10 +146,10 @@ export default function DmsLogin() {
 
             <button type="submit" disabled={loading} className="w-full py-3 rounded-lg text-white font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: loading ? "#234063" : "#0A2240", boxShadow: "0 6px 18px rgba(10,34,64,0.25)", cursor: loading ? "not-allowed" : "pointer" }}>
               {loading ? (
-                  <>
-                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    
-                  </>
+                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               ) : "Login"}
             </button>
 

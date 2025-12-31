@@ -15,7 +15,7 @@ import SideBar1 from './Merchant.png'
 import Discount from './Discount.png'
 import Approver from './Done.png'
 import User from './User.png'
-
+import wyizzLogoMain from './wyizzLogoMain.png'
 export const assets = {
     logo,
     merchant_logo,
@@ -33,6 +33,8 @@ export const assets = {
     Discount,
     User,
     Approver,
-    Dashboard
+    Dashboard,
+ wyizzLogoMain 
+
 
 };

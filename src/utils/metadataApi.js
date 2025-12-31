@@ -303,3 +303,65 @@ export const uploadImageApi = {
     return api.get(`/file/${encodeURIComponent(path)}`);
   }
 };
+
+
+export const userManagementApi = {
+  /**
+   * List Users: Retrieve a paginated list of users[cite: 9, 11].
+   * Supports filtering, sorting, and pagination[cite: 13].
+   */
+  getAll: (params = {}) => {
+    const defaultParams = {
+      skip: 0, // [cite: 16]
+      limit: 10, // [cite: 17]
+      direction: "asc", // [cite: 19]
+    };
+
+    const finalParams = { ...defaultParams, ...params };
+
+    // Base: /reward/manageusers/ + Endpoint: manageusers [cite: 7, 10]
+    return api.get("/reward/manageusers", {
+      params: finalParams,
+    });
+  },
+
+  /**
+   * Get User: Retrieve detailed info about a specific user[cite: 60, 62].
+   */
+  getById: (user_id) => {
+    // Base: /reward/manageusers/ + Endpoint: manageusers/{user_id} [cite: 7, 61]
+    return api.get(`/reward/manageusers/${user_id}`);
+  },
+
+  /**
+   * Create User: Create a new user with automatic entity mapping[cite: 96, 98].
+   */
+  create: (payload) => {
+    // Base: /reward/manageusers/ + Endpoint: manageusers [cite: 7, 97]
+    return api.post("/reward/manageusers", payload);
+  },
+
+  /**
+   * Update User: Update profile details, user type, and entity mappings[cite: 123, 129].
+   */
+  update: (user_id, payload) => {
+    // Base: /reward/manageusers/ + Endpoint: manageusers/{user_id} [cite: 7, 128]
+    return api.put(`/reward/manageusers/${user_id}`, payload);
+  },
+
+  /**
+   * Reset User Password: Generate token and send reset email[cite: 156, 158].
+   */
+  resetPassword: (user_id) => {
+    // Base: /reward/manageusers/ + Endpoint: manageusers/{user_id}/reset-password [cite: 7, 157]
+    return api.post(`/reward/manageusers/${user_id}/reset-password`);
+  },
+
+  /**
+   * Verify Reset Password: Public endpoint to update password via token[cite: 169, 171].
+   */
+  verifyResetPassword: (payload) => {
+    // Base: /reward/manageusers/ + Endpoint: manageusers/reset-password/verify [cite: 7, 170]
+    return api.post("/reward/manageusers/reset-password/verify", payload);
+  },
+};

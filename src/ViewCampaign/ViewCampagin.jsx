@@ -214,6 +214,9 @@ const ViewCampaign = () => {
   const [remarks, setRemarks] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [activeDocIndex, setActiveDocIndex] = useState(0);
+  const [isDocLoading, setIsDocLoading] = useState(false);
+
   useEffect(() => {
     const role = localStorage.getItem("usertype") || "";
     setUserType(role.toLowerCase());
@@ -284,6 +287,17 @@ const ViewCampaign = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+ // ✅ Optimized document switching with a smooth spinner effect
+  const handleDocChange = (index) => {
+    if (index === activeDocIndex) return;
+    setIsDocLoading(true);
+    // Short delay to show the loader for a smooth visual transition
+    setTimeout(() => {
+      setActiveDocIndex(index);
+      setIsDocLoading(false);
+    }, 300);
   };
 
   // ✅ NEW: Handle Delete Rejection (Restore Campaign)
@@ -1177,43 +1191,67 @@ const ViewCampaign = () => {
 </Card>
         {/* DOCUMENTS */}
 
-{/* ✅ DOCUMENTATION CARD - Fixed Height Layout */}
+  {/* ✅ REDESIGNED DOCUMENTATION CARD - Top Tabs & Bottom Content */}
 <Card title="Documentation" icon={FileText}>
-  <div className="space-y-4">
-    {discountDocs && discountDocs.length > 0 ? (
-      discountDocs.map((doc, i) => (
-        <div
-          key={i}
-          className="flex flex-col p-5 bg-white rounded-xl border border-gray-200 shadow-sm"
-        >
-          {/* Field 1: Document Name */}
-          <div className="mb-4">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
-              Document Name
-            </label>
-            <span className="inline-block bg-purple-50 text-purple-700 text-[11px] font-bold px-3 py-1 rounded-md border border-purple-100 shadow-sm">
-              {doc.doc_name || "Untitled Document"}
-            </span>
-          </div>
-
-          {/* Field 2: Document Text / Markdown Preview with 150px height */}
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
-              Document Text Preview
-            </label>
-            <div
-              className="prose prose-slate max-w-none text-slate-700 bg-slate-50/50 p-4 rounded-lg border border-slate-200  overflow-y-auto hide-scroll"
-             style={{maxHeight:"300px"}} dangerouslySetInnerHTML={{ __html: markdownToHtml(doc.doc_text) }}
-            />
-          </div>
-        </div>
-      ))
-    ) : (
-      <div className="text-center py-10 text-gray-400 text-xs italic bg-gray-50 rounded-xl border border-dashed border-gray-200">
-        No documents attached.
+  {discountDocs && discountDocs.length > 0 ? (
+    <div className="flex flex-col gap-4">
+      
+      {/* 1. UPSIDE: Document Selection Tabs */}
+      <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-100">
+        {discountDocs.map((doc, i) => (
+          <button
+            key={i}
+            onClick={() => handleDocChange(i)}
+            className={`px-4 py-2 rounded-lg border text-xs font-bold transition-all flex items-center gap-2 ${
+              activeDocIndex === i
+                ? "bg-purple-50 border-purple-300 text-purple-700 shadow-sm"
+                : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300"
+            }`}
+          >
+            <FileText size={14} className={activeDocIndex === i ? "text-purple-500" : "text-gray-400"} />
+            {doc.doc_name || `Doc ${i + 1}`}
+            {activeDocIndex === i}
+          </button>
+        ))}
       </div>
-    )}
-  </div>
+
+      {/* 2. DOWNSIDE: Markdown Content Area with 200px Max Height */}
+      <div className="relative bg-slate-50/50 rounded-xl border border-slate-200 p-4 min-h-[100px]">
+        {isDocLoading ? (
+          /* ✅ Spinner Overlay */
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 z-10 rounded-xl">
+            <Loader2 className="w-6 h-6 animate-spin text-[#7747EE]" />
+          </div>
+        ) : (
+          /* ✅ Scrollable Document Content */
+          <div 
+            className="overflow-y-auto hide-scroll pr-1" 
+            style={{ maxHeight: "200px" }}
+          >
+            {discountDocs[activeDocIndex]?.doc_text ? (
+              <div
+                className="prose prose-slate prose-sm max-w-none text-slate-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: markdownToHtml(discountDocs[activeDocIndex].doc_text) 
+                }}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 italic text-xs py-10">
+                This document has no content available.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+   
+
+    </div>
+  ) : (
+    <div className="text-center py-10 text-gray-400 text-xs italic bg-gray-50 rounded-xl border border-dashed border-gray-200">
+      No documents attached.
+    </div>
+  )}
 </Card>
       </div>
       {/* --- 3. ACTION FOOTER (CHECKER ONLY) --- */}
